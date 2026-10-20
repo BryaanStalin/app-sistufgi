@@ -10,13 +10,14 @@ use Illuminate\Database\Eloquent\Model;
 class Rol extends Model
 {
     protected $table = 'TB_ACCESO_ROL';
+
     protected $fillable = [
         'titulo',
         'descripcion',
         'status',
         'created_by',
         'updated_by',
-        'deleted_by'
+        'deleted_by',
     ];
 
     public $timestamps = true;
@@ -37,6 +38,7 @@ class Rol extends Model
     public function menus()
     {
         return $this->belongsToMany(Menu::class, 'TB_ACCESO_MENU_X_ROL', 'rol_id', 'menu_principal_id')
+            ->wherePivot('status', 1)
             ->where('TB_ACCESO_MENU.status', 1)
             ->orderBy('TB_ACCESO_MENU.orden')
             ->withPivot('status', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_by')
