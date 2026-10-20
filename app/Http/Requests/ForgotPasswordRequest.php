@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class ForgotPasswordRequest extends FormRequest
 {
@@ -14,16 +15,25 @@ class ForgotPasswordRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge(['email' => Str::lower(trim($email))]);
+        }
+    }
+
     /**
      * Reglas de validación.
      */
     public function rules(): array
     {
         return [
-            'user' => [
+            'email' => [
                 'required',
-                'string',
-                'max:120',
+                'email',
+                'max:255',
             ],
         ];
     }
@@ -34,9 +44,9 @@ class ForgotPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user.required' => 'El usuario es requerido.',
-            'user.string' => 'El usuario debe ser texto.',
-            'user.max' => 'El usuario no puede exceder los 120 caracteres.',
+            'email.required' => 'El correo es obligatorio.',
+            'email.email' => 'Ingresa un correo válido.',
+            'email.max' => 'El correo no puede exceder los 255 caracteres.',
         ];
     }
 }

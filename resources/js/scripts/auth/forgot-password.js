@@ -9,8 +9,8 @@ if ($form.length) {
     const $spinner      = $('#loading-spinner');
     const $errorAlert   = $('#error-alert');
     const $errorMessage = $('#error-message');
-    const $user         = $('#user');
-    const $userError    = $('#user-error');
+    const $email        = $('#email');
+    const $emailError   = $('#email-error');
 
     const BTN_TEXT      = 'Enviar enlace de recuperación';
     const BTN_TEXT_LOAD = 'Enviando...';
@@ -25,8 +25,8 @@ if ($form.length) {
     };
 
     const clearErrors = () => {
-        $user.removeClass('is-invalid');
-        $userError.removeClass('show').text('');
+        $email.removeClass('is-invalid');
+        $emailError.removeClass('show').text('');
         $errorAlert.addClass('d-none');
     };
 
@@ -36,8 +36,8 @@ if ($form.length) {
     };
 
     const showFieldError = (message) => {
-        $user.addClass('is-invalid');
-        $userError.text(message).addClass('show');
+        $email.addClass('is-invalid');
+        $emailError.text(message).addClass('show');
     };
 
     $form.on('submit', function (e) {
@@ -74,9 +74,9 @@ if ($form.length) {
     });
 
     // Limpiar error al escribir
-    $user.on('input', function () {
-        $user.removeClass('is-invalid');
-        $userError.removeClass('show').text('');
+    $email.on('input', function () {
+        $email.removeClass('is-invalid');
+        $emailError.removeClass('show').text('');
     });
 
     function handleError(xhr) {
@@ -114,9 +114,9 @@ if ($form.length) {
             const errors = data.errors ?? {};
 
             if (data.message) showAlertError(data.message);
-            if (errors.user?.[0]) showFieldError(errors.user[0]);
+            if (errors.email?.[0]) showFieldError(errors.email[0]);
 
-            $user.trigger('focus');
+            $email.trigger('focus');
             return;
         }
 

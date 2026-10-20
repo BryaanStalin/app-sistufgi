@@ -25,7 +25,7 @@
                     <i class="bi bi-key"></i> Recuperar contraseña
                 </h4>
                 <p class="text-white mb-0">
-                    Ingrese su usuario y recibirá un enlace para restablecer su contraseña.
+                    Ingrese su correo y recibirá un enlace para restablecer su contraseña.
                 </p>
             </div>
 
@@ -33,21 +33,21 @@
                 @csrf
 
                 <div class="form-group">
-                    <label for="user" class="form-label text-white">
-                        <i class="bi bi-person"></i> Usuario
+                    <label for="email" class="form-label text-white">
+                        <i class="bi bi-envelope"></i> Correo
                     </label>
                     <input
-                        type="text"
+                        type="email"
                         class="form-control"
-                        id="user"
-                        name="user"
-                        placeholder="Ingrese su usuario"
-                        maxlength="120"
-                        autocomplete="username"
+                        id="email"
+                        name="email"
+                        placeholder="Ingrese su correo"
+                        maxlength="255"
+                        autocomplete="email"
                         required
                         autofocus
                     >
-                    <div id="user-error" class="form-text-error"></div>
+                    <div id="email-error" class="form-text-error"></div>
                 </div>
                 <br>
                 <button type="submit" class="btn btn-login" id="submit-btn">

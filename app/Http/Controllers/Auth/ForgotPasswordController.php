@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Services\PasswordResetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ForgotPasswordController extends Controller
 {
@@ -19,7 +19,7 @@ class ForgotPasswordController extends Controller
     /**
      * Mostrar formulario de recuperación de contraseña.
      */
-    public function create()
+    public function create(): View
     {
         return view('auth.forgot-password');
     }
@@ -32,24 +32,19 @@ class ForgotPasswordController extends Controller
         try {
 
             $response = $this->passwordResetService->sendResetLink(
-                $request->validated()['user']
+                $request->validated()['email']
             );
 
             return response()->json($response);
 
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
 
-            logger()->error('Error al solicitar recuperación de contraseña: '.$e->getMessage());
+            logger()->error('Password reset link delivery failed.');
 
             return response()->json([
-                'success' => false,
-                'message' => 'Error interno del sistema.',
-                'errors' => [
-                    'system' => [
-                        'Ocurrió un error inesperado.'
-                    ]
-                ]
-            ], 500);
+                'success' => true,
+                'message' => PasswordResetService::RESET_LINK_MESSAGE,
+            ]);
 
         }
     }
@@ -57,16 +52,15 @@ class ForgotPasswordController extends Controller
     /**
      * Mostrar formulario de restablecer la contraseña.
      */
-    public function showResetForm(Request $request, string $token)
+    public function showResetForm(Request $request, string $token): View
     {
         return view('auth.reset-password', [
             'token' => $token,
-            'email' => $request->email,
-            'user' => User::where('email', $request->email)->value('user')
+            'email' => is_string($request->query('email')) ? $request->query('email') : '',
         ]);
     }
 
-    public function resetPassword(ResetPasswordRequest $request)
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
         $resultado = $this->passwordResetService->resetPassword(
             $request->validated()

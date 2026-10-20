@@ -20,6 +20,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/auditor-findings.json
 /vendor
 _ide_helper.php
 Homestead.json

@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\LogNavigation;
+use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\ValidateMenuAccess;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 
@@ -16,12 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
 
+        $middleware->trustHosts(at: fn (): array => [
+            '^'.preg_quote((string) parse_url((string) config('app.url'), PHP_URL_HOST)).'$',
+        ], subdomains: false);
+
         $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class,
-            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-            'menu.access' => \App\Http\Middleware\ValidateMenuAccess::class,
+            'auth' => Authenticate::class,
+            'guest' => RedirectIfAuthenticated::class,
+            'menu.access' => ValidateMenuAccess::class,
             'throttle' => ThrottleRequests::class,
-            'log.navigation' => \App\Http\Middleware\LogNavigation::class,
+            'log.navigation' => LogNavigation::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -30,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'message' => 'No autenticado',
-                    'errors' => ['auth' => ['Sesión expirada o no iniciada']]
+                    'errors' => ['auth' => ['Sesión expirada o no iniciada']],
                 ], 401);
             }
         });

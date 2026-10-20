@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 
 const MOBILE = window.matchMedia('(max-width: 991.98px)');
 const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarClose = document.getElementById('sidebarClose');
 
 function isSidebarExpanded() {
     return MOBILE.matches
@@ -14,21 +15,40 @@ function syncAria() {
     sidebarToggle?.setAttribute('aria-expanded', String(isSidebarExpanded()));
 }
 
+function closeSidebar(restoreFocus = false) {
+    document.body.classList.remove('sidebar-open');
+    syncAria();
+
+    if (restoreFocus) {
+        sidebarToggle?.focus();
+    }
+}
+
+sidebarClose?.addEventListener('click', () => closeSidebar(true));
+
 sidebarToggle?.addEventListener('click', () => {
     document.body.classList.toggle(MOBILE.matches ? 'sidebar-open' : 'sidebar-collapsed');
     syncAria();
+
+    if (MOBILE.matches && isSidebarExpanded()) {
+        sidebarClose?.focus();
+    }
 });
 
 document.addEventListener('click', (e) => {
     if (!MOBILE.matches || !document.body.classList.contains('sidebar-open')) return;
     if (e.target.closest('.sidebar') || e.target.closest('#sidebarToggle')) return;
-    document.body.classList.remove('sidebar-open');
-    syncAria();
+    closeSidebar();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && MOBILE.matches && isSidebarExpanded()) {
+        closeSidebar(true);
+    }
 });
 
 MOBILE.addEventListener('change', () => {
-    document.body.classList.remove('sidebar-open');
-    syncAria();
+    closeSidebar();
 });
 
 syncAria();

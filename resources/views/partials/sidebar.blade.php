@@ -1,4 +1,8 @@
-<aside class="sidebar d-flex flex-column">
+<aside id="sidebar" class="sidebar d-flex flex-column" aria-label="Menú principal">
+    <button id="sidebarClose" class="btn btn-outline-light sidebar-close align-self-end me-3 d-lg-none"
+            type="button" aria-label="Cerrar menú de navegación" title="Cerrar menú">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
     <div class="text-center py-2">
         <div class="bg-white p-1 rounded-2 shadow-sm d-inline-block" style="max-width: 75%;">
             <img src="{{ asset('img/logo.png') }}" alt="Logo" class="img-fluid" style="max-height: 150px;">
@@ -137,7 +141,7 @@
     </nav>
     <div class="p-3 border-top border-light mt-auto">
         <small class="d-block text-secondary mb-2 text-center text-nowrap text-white">
-            <i class="bi bi-person"></i> UFGI - OGTI - DIRIS LN - {{ date('Y') }}
+            <i class="bi bi-person"></i> UFGI &middot; OGTI &middot; DIRIS LN &middot; {{ date('Y') }}
         </small>
     </div>
 </aside>

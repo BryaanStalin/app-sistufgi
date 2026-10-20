@@ -24,7 +24,7 @@
                     <i class="bi bi-key"></i> Nueva contraseña
                 </h4>
                 <p class="text-white mb-0">
-                    Ingresa tu nueva contraseña. Debe tener al menos 8 caracteres.
+                    Ingresa tu nueva contraseña. Debe tener al menos 8 caracteres, mayúsculas, minúsculas y números.
                 </p>
             </div>
 
@@ -32,7 +32,6 @@
                 @csrf
                 <input type="hidden" name="token" value="{{ $token }}">
                 <input type="hidden" name="email" value="{{ $email }}">
-                <input type="hidden" name="user"  value="{{ $user }}">
 
                 <div class="form-group">
                     <label for="password" class="form-label text-white">
