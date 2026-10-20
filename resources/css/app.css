@@ -1,0 +1,35 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css';
+@import 'sweetalert2/dist/sweetalert2.min.css';
+@import 'select2/dist/css/select2.min.css';
+@import 'select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css';
+@import 'datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css';
+@import 'datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css';
+
+.nav-group-toggle {
+    color: rgba(255,255,255,0.65);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.nav-group-toggle:hover {
+    color: #fff;
+}
+.nav-link.active,
+.nav-link:hover {
+    background-color: rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 8px;
+}
+/* Estilo para sub-menús */
+.nav-group .nav-group .nav-group-toggle {
+    font-size: 0.85rem;
+    padding-left: 1.5rem !important;
+}
+.nav-group .nav-group .nav-link {
+    font-size: 0.85rem;
+    padding-left: 3rem !important;
+}
+/* Animación suave para el chevron */
+.chevron-icon {
+    transition: transform 0.25s ease-in-out;
+}
