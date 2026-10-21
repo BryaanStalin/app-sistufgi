@@ -1,0 +1,17 @@
+.admision { max-width: 1440px; }
+.admision .card, .admision .admision-datos > * { min-width: 0; }
+.admision .card-body, .admision h1, .admision h2, .admision dd, .admision li { overflow-wrap: anywhere; }
+.admision .btn, .admision .form-control, .admision .form-select { min-height: 44px; }
+.admision input[type="date"] { min-width: 0; max-width: 100%; }
+.admision .admision-datos { display: grid; gap: 12px; }
+.admision .admision-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.admision .admision-acciones > * { flex: 1 1 180px; }
+.admision .admision-acciones .btn { white-space: normal; }
+.admision .admision-paginacion .btn { display: inline-flex; align-items: center; }
+@media (min-width: 768px) {
+    .admision .admision-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admision .admision-acciones > * { flex: 0 1 220px; }
+}
+@media (min-width: 1200px) {
+    .admision .admision-datos { grid-template-columns: 1.2fr 1.2fr 1fr 1fr; }
+}

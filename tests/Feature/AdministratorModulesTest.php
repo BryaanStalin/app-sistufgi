@@ -140,8 +140,9 @@ test('administrator index and form pages render their Vite page selectors', func
         ->assertSee('data-page="'.$module.'/index"', false)
         ->assertSee('id="'.$module.'-table"', false)
         ->assertDontSee('cdn.datatables.net', false);
-    $this->get(route($module.'.create'))->assertOk()
-        ->assertSee('data-page="'.$module.'/form"', false)->assertSee('data-select2', false);
+    $form = $this->get(route($module.'.create'))->assertOk()
+        ->assertSee('data-page="'.$module.'/form"', false);
+    $form->assertSee($module === 'roles' ? 'id="menu-tree"' : 'data-select2', false);
 })->with(['usuarios', 'menus', 'roles']);
 
 test('user creation persists one role, a hashed password and the exact establishment code', function (): void {

@@ -1,0 +1,50 @@
+.oferta-triaje {
+    width: 100%;
+    max-width: 48rem;
+    min-width: 0;
+    padding-bottom: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.oferta-triaje .card,
+.oferta-triaje .card-body,
+.oferta-triaje form,
+.oferta-triaje select,
+.oferta-triaje input {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.oferta-triaje .btn,
+.oferta-triaje .form-control,
+.oferta-triaje .form-select {
+    min-height: 44px;
+    font-size: 1rem;
+}
+
+.oferta-triaje .btn {
+    min-width: 44px;
+    white-space: normal;
+}
+
+.oferta-triaje .triaje-servicio-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.oferta-triaje .triaje-grabar-panel {
+    padding-block: 0.75rem;
+    background: var(--bs-body-bg);
+}
+
+.oferta-triaje .triaje-paciente-datos {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    column-gap: 0.5rem;
+}
+
+.oferta-triaje [hidden] {
+    display: none !important;
+}

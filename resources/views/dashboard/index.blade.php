@@ -286,7 +286,7 @@
                     <p class="cta-desc">Gestione sus pacientes y campañas asignadas desde el módulo médico.</p>
                 </div>
                 {{-- <a href="{{ route('campanias.triaje') }}" class="btn btn-cta w-100">... --}}
-                <a href="#" class="btn-cta">
+                <a href="{{ route('oferta-flexible.triaje.index') }}" class="btn-cta">
                     <i class="bi bi-arrow-right-circle"></i> Ir al módulo
                 </a>
             </div>

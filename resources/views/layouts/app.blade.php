@@ -28,7 +28,7 @@
 
     @yield('styles')
 </head>
-<body data-page="@yield('script')">
+<body data-page="@yield('script')" data-script="@yield('script')">
     <div class="d-flex min-vh-100">
         @include('partials.sidebar')
 

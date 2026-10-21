@@ -34,10 +34,23 @@ if (csrfToken) {
 }
 
 const pages = import.meta.glob('./scripts/**/*.js');
+const ofertaFlexiblePages = import.meta.glob('../scripts/oferta_flexible/**/*.js');
 
 (async () => {
-    const page = document.body.dataset.page;
+    const page = document.body.dataset.script || document.body.dataset.page;
     if (!page) return;
+
+    if (page.startsWith('oferta_flexible/')) {
+        const module = ofertaFlexiblePages[`../scripts/${page}.js`];
+        if (module) {
+            try {
+                await module();
+            } catch (error) {
+                console.error(`[page:${page}] Error al cargar:`, error);
+            }
+        }
+        return;
+    }
 
     const path = `./scripts/${page}.js`;
 
