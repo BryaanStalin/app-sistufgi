@@ -13,7 +13,12 @@ class PacienteMock extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['dni', 'nombres_apellidos', 'fecha_nacimiento', 'telefono', 'tipo_doc', 'sexo'];
+    protected $fillable = ['dni', 'nombres', 'apellidos', 'fecha_nacimiento', 'telefono', 'tipo_doc', 'sexo'];
 
     protected $casts = ['fecha_nacimiento' => 'immutable_date'];
+
+    public function getNombreCompletoAttribute(): string
+    {
+        return trim($this->nombres.' '.$this->apellidos);
+    }
 }

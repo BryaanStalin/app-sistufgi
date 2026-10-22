@@ -28,7 +28,7 @@ class HojaRutaPdfService
                 'emitidoAt' => $emitidoAt,
                 'edad' => $this->pacientes->calcularEdad($hoja->paciente->fecha_nacimiento->toDateString()),
                 'logo' => 'data:image/svg+xml;base64,'.base64_encode(
-                    file_get_contents(public_path('img/logo-diris-ln.svg')),
+                    file_get_contents(public_path('img/logo.png')),
                 ),
                 'altoServicio' => $alto,
                 'fuenteServicio' => $fuente,

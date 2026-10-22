@@ -2,6 +2,13 @@
 
 return [
 
+    'dni_api' => [
+        'url' => env('DNI_API_URL', env('URL_API_CONSULTA_DNI')),
+        'token' => env('DNI_API_TOKEN', env('API_KEY_CONSULTA_DNI')),
+        'timeout' => (int) env('DNI_API_TIMEOUT', 8),
+        'enabled' => (bool) env('DNI_API_ENABLED', false),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

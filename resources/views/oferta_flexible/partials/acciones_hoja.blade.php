@@ -12,7 +12,7 @@
         <button
             type="submit"
             class="btn btn-primary admision-action-button"
-            aria-label="Imprimir hoja de {{ $hoja->nombres_apellidos }}"
+            aria-label="Imprimir hoja de {{ $hoja->nombre_completo }}"
             title="Imprimir hoja de ruta"
             data-bs-toggle="tooltip"
         >
@@ -26,9 +26,9 @@
             type="button"
             data-hoja="{{ $hoja->id }}"
             data-campania="{{ $campania->id }}"
-            data-paciente="{{ $hoja->nombres_apellidos }}"
+            data-paciente="{{ $hoja->nombre_completo }}"
             data-url="{{ route('oferta-flexible.admision.destroy') }}"
-            aria-label="Eliminar hoja de {{ $hoja->nombres_apellidos }}"
+            aria-label="Eliminar hoja de {{ $hoja->nombre_completo }}"
             title="Eliminar hoja de ruta"
             data-bs-toggle="tooltip"
         >

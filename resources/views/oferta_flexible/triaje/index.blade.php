@@ -19,7 +19,8 @@
                     'titulo' => 'Campaña de Salud de Especialidad',
                     'subtitulo' => 'Identifique al paciente y prepare su hoja de ruta.',
                 ])
-                <div class="alert alert-info" role="status">No tiene campañas activas asignadas. Consulte con el Administrador.
+                <div class="alert alert-info" role="status">
+                    No tiene campañas activas asignadas. Consulte con el Administrador.
                 </div>
             @else
                 @if ($campanias->count() > 1)
@@ -88,7 +89,8 @@
                                     required
                                 >
                                     @foreach ($tiposDocumento as $tipo)
-                                        <option value="{{ $tipo }}" @selected($tipo === 'DNI')>{{ $tipo }}
+                                        <option value="{{ $tipo }}" @selected($tipo === 'DNI')>
+                                            {{ $tipo }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -110,9 +112,11 @@
                                     aria-describedby="triaje-documento-ayuda triaje-numero-error"
                                     required
                                 >
-                                <div class="invalid-feedback" id="triaje-numero-error">Revise el número según el tipo de documento seleccionado.
+                                <div class="invalid-feedback" id="triaje-numero-error">
+                                    Revise el número según el tipo de documento seleccionado.
                                 </div>
-                                <div id="triaje-documento-ayuda" class="form-text">Ingrese exactamente 8 dígitos.
+                                <div id="triaje-documento-ayuda" class="form-text">
+                                    Ingrese exactamente 8 dígitos.
                                 </div>
                             </div>
                             <button
@@ -135,7 +139,8 @@
                 >
                     <div class="card-body">
                         <h2 class="h5" id="registro-titulo">Registrar paciente</h2>
-                        <p class="text-muted" id="triaje-registro-aviso">No se encontró el documento. Complete los datos del paciente.
+                        <p class="text-muted" id="triaje-registro-aviso">
+                            No se encontró el documento. Complete los datos del paciente.
                         </p>
                         <form
                             id="triaje-registrar"
@@ -144,17 +149,33 @@
                         >
                             @csrf
                             <div class="mb-3">
-                                <label for="triaje-nombres" class="form-label">Nombres y apellidos</label>
+                                <label for="triaje-nombres" class="form-label">Nombres</label>
                                 <input
                                     id="triaje-nombres"
                                     aria-describedby="triaje-nombres-error"
                                     class="form-control"
-                                    name="nombres_apellidos"
-                                    maxlength="200"
-                                    autocomplete="name"
+                                    name="nombres"
+                                    maxlength="150"
+                                    autocomplete="given-name"
                                     required
                                 >
-                                <div class="invalid-feedback" id="triaje-nombres-error">Ingrese los nombres y apellidos del paciente.
+                                <div class="invalid-feedback" id="triaje-nombres-error">
+                                    Ingrese los nombres del paciente.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="triaje-apellidos" class="form-label">Apellidos</label>
+                                <input
+                                    id="triaje-apellidos"
+                                    aria-describedby="triaje-apellidos-error"
+                                    class="form-control"
+                                    name="apellidos"
+                                    maxlength="150"
+                                    autocomplete="family-name"
+                                    required
+                                >
+                                <div class="invalid-feedback" id="triaje-apellidos-error">
+                                    Ingrese los apellidos del paciente.
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -168,7 +189,8 @@
                                     max="{{ today('America/Lima')->toDateString() }}"
                                     required
                                 >
-                                <div class="invalid-feedback" id="triaje-nacimiento-error">Ingrese una fecha de nacimiento válida.
+                                <div class="invalid-feedback" id="triaje-nacimiento-error">
+                                    Ingrese una fecha de nacimiento válida.
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -184,7 +206,8 @@
                                     <option value="F">Femenino</option>
                                     <option value="M">Masculino</option>
                                 </select>
-                                <div class="invalid-feedback" id="triaje-sexo-error">Seleccione el sexo del paciente.
+                                <div class="invalid-feedback" id="triaje-sexo-error">
+                                    Seleccione el sexo del paciente.
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -199,7 +222,8 @@
                                     autocomplete="tel"
                                     maxlength="150"
                                 >
-                                <div class="invalid-feedback" id="triaje-telefono-error">Revise el teléfono ingresado.
+                                <div class="invalid-feedback" id="triaje-telefono-error">
+                                    Revise el teléfono ingresado.
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">
@@ -291,7 +315,8 @@
                     </div>
                 </section>
                 <noscript>
-                    <div class="alert alert-warning mt-3">Active JavaScript para buscar pacientes y registrar la hoja de ruta.
+                    <div class="alert alert-warning mt-3">
+                        Active JavaScript para buscar pacientes y registrar la hoja de ruta.
                     </div>
                 </noscript>
             @endif

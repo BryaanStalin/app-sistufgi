@@ -32,7 +32,8 @@ function hojaRutaPdfEjemplo(int $cantidad, bool $nombresLargos = false): HojaRut
         'nombre' => 'Campaña de Salud de Especialidad - Atención Integral',
     ]));
     $hoja->setRelation('paciente', PacienteMock::factory()->make([
-        'nombres_apellidos' => 'María Muñoz Peña',
+        'nombres' => 'María',
+        'apellidos' => 'Muñoz Peña',
         'dni' => '12345678',
         'fecha_nacimiento' => '1980-10-20',
     ]));
@@ -81,10 +82,10 @@ test('route PDF keeps the requested services on one portrait A4 page', function 
     if ($directorio = getenv('HOJA_RUTA_PDF_PREVIEW_DIR')) {
         file_put_contents($directorio.'/hoja-'.$cantidad.'.pdf', $contenido);
     }
-})->with([8, 9, 12, 16, 20, 24]);
+})->with([8, 9, 12, 16, 20, 22]);
 
-test('route PDF fits twenty services with long Spanish descriptions on one page', function (): void {
-    $contenido = app(HojaRutaPdfService::class)->generar(hojaRutaPdfEjemplo(20, true), now());
+test('route PDF fits sixteen services with long Spanish descriptions on one page', function (): void {
+    $contenido = app(HojaRutaPdfService::class)->generar(hojaRutaPdfEjemplo(16, true), now());
 
     expect(preg_match_all('~/Type\s*/Page\b~', $contenido))->toBe(1);
 
@@ -96,7 +97,7 @@ test('route PDF fits twenty services with long Spanish descriptions on one page'
 test('route PDF refuses overflow instead of splitting stamps across multiple pages', function (int $cantidad): void {
     expect(fn () => app(HojaRutaPdfService::class)->generar(hojaRutaPdfEjemplo($cantidad), now()))
         ->toThrow(ValidationException::class);
-})->with([25, 60]);
+})->with([23, 24, 25, 60]);
 
 test('route PDF leaves the unmatched second half borderless and preserves vital sign labels', function (): void {
     $html = view('oferta_flexible.admision.pdf', [
@@ -110,6 +111,6 @@ test('route PDF leaves the unmatched second half borderless and preserves vital 
 
     expect($xpath->query('//table[@class="servicios"]/tbody/tr'))->toHaveCount(5);
     expect($xpath->query('//td[@class="mitad-vacia" and @colspan="2"]'))->toHaveCount(1);
-    expect($xpath->query('//table[@class="signos"]/tr/td'))->toHaveCount(5);
-    expect($html)->toContain('PESO:', 'TALLA:', 'PA:', 'Sat O2:', 'T°:', 'C°', 'María Muñoz Peña');
+    expect($xpath->query('//table[@class="signos"]/tr/td'))->toHaveCount(6);
+    expect($html)->toContain('PESO:', 'TALLA:', 'PA:', 'Sat O2:', 'T°:', 'C°', 'GLUCOSA', 'María Muñoz Peña');
 });

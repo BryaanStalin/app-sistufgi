@@ -1,5 +1,7 @@
 import '../../css/oferta_flexible/administracion.css';
 
+const submissionStates = new WeakMap();
+
 export function initializeAdministration() {
     const root = document.querySelector('.oferta-admin');
     if (!root) {
@@ -8,6 +10,7 @@ export function initializeAdministration() {
     initializeTooltips(root);
     initializeSelects(root);
     initializeValidation(root);
+    initializeSubmissions(root);
 }
 
 export function initializeTooltips(root) {
@@ -58,17 +61,58 @@ function initializeValidation(root) {
             }
         });
     });
-    root.querySelectorAll('form[data-admin-submit]').forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            queueMicrotask(() => {
-                if (!event.defaultPrevented) {
-                    form.querySelectorAll('[type="submit"]').forEach((button) => setBusy(button, true));
-                }
-            });
-        });
-    });
+}
+
+function initializeSubmissions(root) {
+    root.addEventListener('submit', handleSubmission);
     window.addEventListener('pageshow', () => {
+        root.querySelectorAll('form').forEach((form) => submissionStates.delete(form));
         root.querySelectorAll('[data-busy]').forEach((button) => setBusy(button, false));
+    });
+}
+
+async function handleSubmission(event) {
+    const form = event.target;
+    if (!form.matches('form[data-admin-submit], form[data-confirm-form]') || event.defaultPrevented) {
+        return;
+    }
+    if (!submissionStates.has(form)) {
+        submissionStates.set(form, { confirming: false, confirmed: false, submitting: false });
+    }
+    const state = submissionStates.get(form);
+    if (state.submitting) {
+        event.preventDefault();
+        return;
+    }
+    if (form.hasAttribute('data-confirm-form') && !state.confirmed) {
+        event.preventDefault();
+        if (state.confirming) {
+            return;
+        }
+        state.confirming = true;
+        try {
+            const result = await confirmAction(form.dataset.confirmForm);
+            if (result.isConfirmed && submissionStates.get(form) === state) {
+                state.confirmed = true;
+                form.requestSubmit(event.submitter || undefined);
+            }
+        } finally {
+            state.confirmed = false;
+            state.confirming = false;
+        }
+        return;
+    }
+    state.submitting = true;
+    form.querySelectorAll('[type="submit"]:not(:disabled)').forEach((button) => setBusy(button, true));
+}
+
+export function confirmAction(message) {
+    return window.Swal.fire({
+        title: message,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, confirmar',
+        cancelButtonText: 'Cancelar',
     });
 }
 

@@ -20,7 +20,8 @@ function initializeTriaje() {
     const fields = {
         tipo_doc: type,
         dni: number,
-        nombres_apellidos: get('nombres'),
+        nombres: get('nombres'),
+        apellidos: get('apellidos'),
         fecha_nacimiento: get('nacimiento'),
         sexo: get('sexo'),
         telefono: get('telefono'),
@@ -132,7 +133,9 @@ function initializeTriaje() {
                 ? Object.values(errors).flat().join(' ')
                 : error.status === 419
                   ? 'La sesión expiró. Recargue la página antes de continuar.'
-                  : 'No se pudo completar la operación. Intente nuevamente.';
+                  : error.status === 429
+                    ? error.responseJSON?.message || 'Espere un minuto antes de volver a buscar un DNI.'
+                    : 'No se pudo completar la operación. Intente nuevamente.';
             message(text, 'danger');
             get('mensaje').focus();
             throw error;
@@ -259,7 +262,7 @@ function initializeTriaje() {
         get('identificacion').hidden = Boolean(patient);
         if (patient) {
             get('registro').hidden = true;
-            get('paciente-nombre').textContent = patient.nombres_apellidos;
+            get('paciente-nombre').textContent = patient.nombre_completo;
             get('paciente-documento').textContent = `${patient.tipo_doc || ''} ${patient.dni || ''}`.trim();
             get('paciente-edad').textContent = `${patient.edad} ${patient.edad === 1 ? 'año' : 'años'}`;
             get('paciente-sexo').textContent =
@@ -285,8 +288,40 @@ function initializeTriaje() {
         }
         get('identificacion').hidden = false;
         registerForm.reset();
+        for (const id of ['nombres', 'apellidos', 'nacimiento']) {
+            get(id).readOnly = false;
+        }
+        get('sexo').disabled = false;
         clearValidation();
         updateButtons();
+    }
+
+    function prefillRegistration(consulta) {
+        if (!consulta || consulta.estado !== 'ENCONTRADO') {
+            return;
+        }
+        const labels = {
+            nombres: 'Nombres',
+            apellidos: 'Apellidos',
+            fecha_nacimiento: 'Fecha de nacimiento',
+            sexo: 'Sexo',
+        };
+        for (const [field, label] of Object.entries(labels)) {
+            const input = fields[field];
+            input.value = consulta.datos[field] || '';
+            const pending = consulta.faltantes.includes(field);
+            if (field === 'sexo') {
+                input.disabled = !pending;
+            } else {
+                input.readOnly = !pending;
+            }
+            if (pending) {
+                showValidation({ [field]: [`Complete o revise: ${label}.`] });
+            }
+        }
+        get('registro-aviso').textContent = `${consulta.mensaje} Falta completar: ${consulta.faltantes
+            .map((field) => labels[field])
+            .join(', ')}.`;
     }
 
     async function confirmDiscard() {
@@ -396,13 +431,17 @@ function initializeTriaje() {
             const data = await request('buscar', searchedDocument);
             applyContext(data);
             message(
-                data.paciente ? 'Paciente encontrado.' : 'No se encontró el documento. Registre al paciente.',
+                data.paciente
+                    ? 'Paciente encontrado.'
+                    : data.consulta_dni?.mensaje || 'No se encontró el documento. Registre al paciente.',
             );
             if (!data.paciente) {
                 get('registro').hidden = false;
                 get('registro-aviso').textContent =
-                    'No se encontró el documento. Complete los datos del paciente.';
-                get('nombres').focus();
+                    data.consulta_dni?.mensaje || 'No se encontró el documento. Complete los datos del paciente.';
+                prefillRegistration(data.consulta_dni);
+                const pending = data.consulta_dni?.faltantes?.[0];
+                (fields[pending] || get('nombres')).focus();
             }
         } catch {
             /* request displays the error without discarding entered data. */
@@ -416,7 +455,8 @@ function initializeTriaje() {
         try {
             const data = await request('registrar', {
                 ...searchedDocument,
-                nombres_apellidos: get('nombres').value,
+                nombres: get('nombres').value,
+                apellidos: get('apellidos').value,
                 fecha_nacimiento: get('nacimiento').value,
                 sexo: get('sexo').value,
                 telefono: get('telefono').value,

@@ -201,6 +201,44 @@ function admisionEscenario(bool $asociar = true): array
     return compact('usuario', 'medico', 'campania', 'servicio', 'hoja');
 }
 
+test('admission name search matches every word across names and surnames in any order', function (
+    string $busqueda,
+    bool $encontrado,
+): void {
+    ['usuario' => $usuario, 'campania' => $campania, 'hoja' => $hoja] = admisionEscenario();
+    $hoja->paciente->update([
+        'nombres' => 'JUAN CARLOS',
+        'apellidos' => 'PEREZ GARCIA',
+        'dni' => '73050308',
+    ]);
+
+    $response = $this->actingAs($usuario)
+        ->getJson(route('oferta-flexible.admision.index', [
+            'campania_id' => $campania->id,
+            'q' => $busqueda,
+        ]))
+        ->assertOk();
+
+    $documento = new DOMDocument;
+    @$documento->loadHTML('<?xml encoding="UTF-8">'.$response->json('html'));
+    $xpath = new DOMXPath($documento);
+    expect(trim($xpath->query('//*[@data-resumen="total"]')->item(0)->textContent))
+        ->toBe($encontrado ? '1' : '0');
+
+    if ($encontrado) {
+        expect($response->json('html'))->toContain('JUAN CARLOS PEREZ GARCIA');
+    } else {
+        expect($response->json('html'))->not->toContain('JUAN CARLOS PEREZ GARCIA');
+    }
+})->with([
+    ['PEREZ JUAN', true],
+    ['garcia carlos juan', true],
+    [" JUAN\tGARCIA  CARLOS ", true],
+    ['CAR GAR', true],
+    ['73050308', true],
+    ['JUAN DESCONOCIDO', false],
+]);
+
 test('admission guests must sign in for every operation', function (): void {
     $url = route('oferta-flexible.admision.index');
     $this->get($url)->assertRedirect(route('login'));
@@ -270,8 +308,8 @@ test('admission sees only linked doctors and sheets in the selected campaign', f
         ->assertOk()
         ->assertSee($campania->nombre)
         ->assertSee($medico->nombre)
-        ->assertSee($hoja->paciente->nombres_apellidos)
-        ->assertDontSee($ajena->paciente->nombres_apellidos)
+        ->assertSee($hoja->paciente->nombre_completo)
+        ->assertDontSee($ajena->paciente->nombre_completo)
         ->assertDontSee($ajena->medico->nombre)
         ->assertSee('data-script="oferta_flexible/admision"', false);
 });
@@ -283,7 +321,7 @@ test('unassociated campaigns show all sheets to assigned admission users', funct
         ->actingAs($usuario)
         ->get(route('oferta-flexible.admision.index'))
         ->assertOk()
-        ->assertSee($otra->paciente->nombres_apellidos);
+        ->assertSee($otra->paciente->nombre_completo);
 });
 
 test('associated campaigns with no links return no sheets', function (): void {
@@ -294,7 +332,7 @@ test('associated campaigns with no links return no sheets', function (): void {
         ->get(route('oferta-flexible.admision.index'))
         ->assertOk()
         ->assertSee('No tiene médicos enlazados en esta campaña.')
-        ->assertDontSee($hoja->paciente->nombres_apellidos);
+        ->assertDontSee($hoja->paciente->nombre_completo);
 });
 
 test('campaign selection prefers active campaigns and supports closed history', function (): void {
@@ -328,11 +366,11 @@ test('date doctor and search filters are retained in ajax pagination', function 
         'servicio' => $servicio,
         'hoja' => $hoja,
     ] = admisionEscenario();
-    $hoja->paciente->update(['nombres_apellidos' => 'Paciente Muñoz 00']);
+    $hoja->paciente->update(['nombres' => 'Paciente Muñoz 00']);
     for ($i = 1; $i <= 15; $i++) {
         $otra = ofertaHoja($servicio, $medico);
         $otra->paciente->update([
-            'nombres_apellidos' => 'Paciente Muñoz '.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
+            'nombres' => 'Paciente Muñoz '.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
         ]);
     }
     $filters = [
@@ -375,7 +413,7 @@ test('sheet summaries cover all filtered pages and preserve each role scope', fu
     $actor = $role === 'Administrador' ? admisionActor($role) : $admission;
     for ($index = 0; $index < 18; $index++) {
         $sheet = $index === 0 ? $first : ofertaHoja($service, $doctor);
-        $sheet->paciente->update(['nombres_apellidos' => 'Resumen filtro '.$index]);
+        $sheet->paciente->update(['nombres' => 'Resumen filtro '.$index]);
         $sheet
             ->forceFill([
                 'updated_at' => $index < 3 ? '2026-10-20 12:00:00' : '2026-10-20 10:00:00',
@@ -392,14 +430,14 @@ test('sheet summaries cover all filtered pages and preserve each role scope', fu
         }
     }
     $foreign = ofertaHoja($service);
-    $foreign->paciente->update(['nombres_apellidos' => 'Resumen de otro médico']);
+    $foreign->paciente->update(['nombres' => 'Resumen de otro médico']);
     $outsideSearch = ofertaHoja($service, $doctor);
-    $outsideSearch->paciente->update(['nombres_apellidos' => 'Paciente fuera de búsqueda']);
+    $outsideSearch->paciente->update(['nombres' => 'Paciente fuera de búsqueda']);
     $outsideDate = ofertaHoja($service, $doctor);
-    $outsideDate->paciente->update(['nombres_apellidos' => 'Resumen de ayer']);
+    $outsideDate->paciente->update(['nombres' => 'Resumen de ayer']);
     $outsideDate->update(['fecha_atencion' => '2026-10-19']);
     $deleted = ofertaHoja($service, $doctor);
-    $deleted->paciente->update(['nombres_apellidos' => 'Resumen eliminado']);
+    $deleted->paciente->update(['nombres' => 'Resumen eliminado']);
     $deleted->delete();
     $filters = [
         'campania_id' => $campaign->id,
@@ -449,13 +487,13 @@ test('document search and manipulated doctor filters cannot expand admission sco
         ->assertOk()
         ->assertJsonPath(
             'html',
-            fn (string $html): bool => str_contains($html, e($hoja->paciente->nombres_apellidos)),
+            fn (string $html): bool => str_contains($html, e($hoja->paciente->nombre_completo)),
         );
     foreach (
         [
             ['q' => "' OR 1=1 --"],
             ['medico_id' => $ajena->medico_usuario_id],
-            ['q' => $ajena->paciente->nombres_apellidos],
+            ['q' => $ajena->paciente->nombre_completo],
         ] as $filter
     ) {
         $this
@@ -542,7 +580,7 @@ test('each generated PDF appends an audited impression even when the campaign is
     ] = admisionEscenario();
     $campania->update(['cerrada' => $closed]);
     $hoja->paciente->update([
-        'nombres_apellidos' => 'María Muñoz Peña',
+        'nombres' => 'María Muñoz Peña',
         'fecha_nacimiento' => '1980-10-20',
         'sexo' => 'F',
     ]);
@@ -717,7 +755,7 @@ test('patient doctor campaign and service names are escaped in list and PDF temp
         'hoja' => $hoja,
     ] = admisionEscenario();
     $payload = '<script>alert("x")</script>';
-    $hoja->paciente->update(['nombres_apellidos' => $payload]);
+    $hoja->paciente->update(['nombres' => $payload]);
     $medico->update(['nombre' => $payload]);
     $campania->update(['nombre' => $payload]);
     $servicio->servicioUps->update(['DESCRIPCION_UPS' => $payload]);
@@ -754,9 +792,9 @@ test('administrator sees every sheet creator without assignments or links', func
         ->actingAs($administrador)
         ->get(route('oferta-flexible.admision.index', ['campania_id' => $campania->id]))
         ->assertOk()
-        ->assertSee($hoja->paciente->nombres_apellidos)
-        ->assertSee($sinEnlace->paciente->nombres_apellidos)
-        ->assertDontSee($ajena->paciente->nombres_apellidos)
+        ->assertSee($hoja->paciente->nombre_completo)
+        ->assertSee($sinEnlace->paciente->nombre_completo)
+        ->assertDontSee($ajena->paciente->nombre_completo)
         ->assertDontSee('Médicos enlazados:')
         ->assertViewHas(
             'medicos',
@@ -772,8 +810,8 @@ test('administrator sees every sheet creator without assignments or links', func
             ->actingAs($admision)
             ->get(route('oferta-flexible.admision.index', ['campania_id' => $campania->id]))
             ->assertOk()
-            ->assertSee($hoja->paciente->nombres_apellidos)
-            ->assertDontSee($sinEnlace->paciente->nombres_apellidos);
+            ->assertSee($hoja->paciente->nombre_completo)
+            ->assertDontSee($sinEnlace->paciente->nombre_completo);
     }
 })->with([true, false]);
 
@@ -842,8 +880,8 @@ test(
             ->assertOk();
         expect(array_keys($respuesta->json()))->toBe(['html']);
         expect($respuesta->json('html'))
-            ->toContain(e($otra->paciente->nombres_apellidos))
-            ->not->toContain(e($hoja->paciente->nombres_apellidos));
+            ->toContain(e($otra->paciente->nombre_completo))
+            ->not->toContain(e($hoja->paciente->nombre_completo));
         $this
             ->getJson(route('oferta-flexible.admision.index', [...$data, 'fecha' => '2026-10-19']))
             ->assertOk()
@@ -953,8 +991,8 @@ test('inactive administrator permissions cannot expand admission scope', functio
         ->actingAs($usuario)
         ->get(route('oferta-flexible.admision.index'))
         ->assertOk()
-        ->assertSee($hoja->paciente->nombres_apellidos)
-        ->assertDontSee($sinEnlace->paciente->nombres_apellidos);
+        ->assertSee($hoja->paciente->nombre_completo)
+        ->assertDontSee($sinEnlace->paciente->nombre_completo);
     $this->postJson(route('oferta-flexible.admision.imprimir'), [
         'campania_id' => $hoja->campania_id,
         'hoja_id' => $sinEnlace->id,

@@ -48,7 +48,6 @@
             .logo {
                 width: 132pt;
                 height: 55pt;
-                background-color: #02182e;
             }
 
             .titulo {
@@ -167,7 +166,7 @@
             <tr>
                 <td colspan="3">
                     <span class="etiqueta">Nombres y apellidos</span>
-                    <span class="nombre-paciente">{{ $hoja->paciente->nombres_apellidos }}</span>
+                    <span class="nombre-paciente">{{ $hoja->paciente->nombre_completo }}</span>
                 </td>
             </tr>
             <tr>
@@ -203,11 +202,20 @@
         </table>
         <table class="signos">
             <tr>
-                <td>PESO: ______ Kg.</td>
-                <td>TALLA: ______ Mts.</td>
+                <td>PESO: __________ Kg.</td>
+                <td>TALLA: __________ Mts.</td>
                 <td>PA: _____ / _____ mmHg</td>
-                <td>Sat O2: ______ %</td>
-                <td>T°: ______ C°</td>
+                <td>Sat O2: __________ %</td>
+                <td>T°: __________ C°</td>
+            </tr>
+        </table>
+        <table class="signos">
+            <tr style="width:50%">
+                <td>
+                    <span style="font-weight: bold; color: red;">GLUCOSA:</span>
+                    _____________
+                    <input type="checkbox" style="vertical-align: middle; margin: 0 3px 0 8px;"> Ayunas
+                    <input type="checkbox" style="vertical-align: middle; margin: 0 3px 0 8px;"> Postprandial</td>
             </tr>
         </table>
         <h2>Servicios indicados</h2>

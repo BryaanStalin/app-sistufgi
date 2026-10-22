@@ -15,7 +15,8 @@ class PacienteMockFactory extends Factory
         return [
             'dni' => fake()->unique()->numerify('########'),
             'tipo_doc' => 'DNI',
-            'nombres_apellidos' => fake()->name(),
+            'nombres' => mb_strtoupper(fake()->firstName()),
+            'apellidos' => mb_strtoupper(fake()->lastName()),
             'fecha_nacimiento' => '1980-01-01',
             'sexo' => 'F',
         ];

@@ -8,6 +8,7 @@ use App\Models\CampaniaServicio;
 use App\Models\CampaniaUsuario;
 use App\Models\HojaRuta;
 use App\Models\HojaRutaImpresion;
+use App\Models\PacienteMock;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -78,6 +79,10 @@ class AdmisionService
             ->groupBy('hoja_ruta_id');
 
         return $hojas->through(function (object $hoja) use ($servicios): object {
+            $hoja->nombre_completo = (new PacienteMock([
+                'nombres' => $hoja->nombres,
+                'apellidos' => $hoja->apellidos,
+            ]))->nombre_completo;
             $hoja->servicios = $servicios
                 ->get($hoja->id, collect())
                 ->pluck('DESCRIPCION_UPS')
@@ -118,7 +123,8 @@ class AdmisionService
                 'TB_HOJAS_RUTA.updated_at',
                 'paciente.tipo_doc',
                 'paciente.dni',
-                'paciente.nombres_apellidos',
+                'paciente.nombres',
+                'paciente.apellidos',
                 'medico.nombre as medico',
                 'impresiones.cantidad_impresiones',
                 'impresiones.ultima_impresion',
@@ -131,11 +137,21 @@ class AdmisionService
             )
             ->when(
                 $filters['q'] ?? null,
-                fn ($query, $term) => $query->where(
-                    fn ($search) => $search
-                        ->where('paciente.dni', 'like', '%'.$term.'%')
-                        ->orWhere('paciente.nombres_apellidos', 'like', '%'.$term.'%'),
-                ),
+                function ($query, string $term): void {
+                    $palabras = preg_split('/[\s\p{Z}]+/u', trim($term), -1, PREG_SPLIT_NO_EMPTY);
+                    $query->where(function ($search) use ($term, $palabras): void {
+                        $search->where('paciente.dni', 'like', '%'.$term.'%')
+                            ->orWhere(function ($nombres) use ($palabras): void {
+                                foreach ($palabras as $palabra) {
+                                    $nombres->where(
+                                        fn ($parte) => $parte
+                                            ->where('paciente.nombres', 'like', '%'.$palabra.'%')
+                                            ->orWhere('paciente.apellidos', 'like', '%'.$palabra.'%'),
+                                    );
+                                }
+                            });
+                    });
+                },
             )
             ->orderByDesc('TB_HOJAS_RUTA.created_at')
             ->orderByDesc('TB_HOJAS_RUTA.id');

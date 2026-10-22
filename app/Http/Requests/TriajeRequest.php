@@ -14,6 +14,16 @@ class TriajeRequest extends FormRequest
         return OfertaFlexibleAccess::hasRole($this->user(), 'Médico Triaje');
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('accion') === 'registrar') {
+            $this->merge([
+                'nombres' => PacienteService::normalizarNombre($this->input('nombres')),
+                'apellidos' => PacienteService::normalizarNombre($this->input('apellidos')),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         $rules = [
@@ -38,7 +48,8 @@ class TriajeRequest extends FormRequest
         }
         if ($accion === 'registrar') {
             $rules += [
-                'nombres_apellidos' => ['required', 'string', 'max:200'],
+                'nombres' => ['required', 'string', 'max:150'],
+                'apellidos' => ['required', 'string', 'max:150'],
                 'fecha_nacimiento' => [
                     'required',
                     'date_format:Y-m-d',
@@ -86,7 +97,8 @@ class TriajeRequest extends FormRequest
         return [
             'dni' => 'documento',
             'tipo_doc' => 'tipo de documento',
-            'nombres_apellidos' => 'nombres y apellidos',
+            'nombres' => 'nombres',
+            'apellidos' => 'apellidos',
             'fecha_nacimiento' => 'fecha de nacimiento',
             'sexo' => 'sexo',
             'telefono' => 'teléfono',

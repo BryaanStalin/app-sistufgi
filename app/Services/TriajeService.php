@@ -15,9 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class TriajeService
 {
-    public function __construct(protected PacienteService $pacientes, protected CampaniaService $campanias)
-    {
-    }
+    public function __construct(protected PacienteService $pacientes, protected CampaniaService $campanias) {}
 
     /** @return Collection<int, Campania> */
     public function campanias(User $medico): Collection
@@ -40,7 +38,14 @@ class TriajeService
      */
     public function operar(User $medico, array $data): array
     {
-        return DB::transaction(function () use ($medico, $data): array {
+        $consulta = null;
+        if ($data['accion'] === 'buscar') {
+            $preliminar = $this->campaniaAsignada($medico, (int) $data['campania_id']);
+            $this->assertEnAtencion($preliminar);
+            $consulta = $this->pacientes->prepararBusqueda($data['tipo_doc'], $data['dni'] ?? null);
+        }
+
+        return DB::transaction(function () use ($medico, $data, $consulta): array {
             $this->assertMedico($medico);
             /** El mismo orden de bloqueo que Administración impide cierres o retiros durante la operación. */
             $campania = Campania::query()
@@ -51,18 +56,12 @@ class TriajeService
                 ->lockForUpdate()
                 ->findOrFail($data['campania_id']);
             $hoy = CarbonImmutable::today('America/Lima');
-            if ($campania->estado !== 'Activa') {
-                throw ValidationException::withMessages([
-                    'campania_id' => 'La campaña ya no está activa. Solo se puede registrar durante sus días de atención.',
-                ]);
-            }
-            if (!$campania->estaEnPeriodoAtencion()) {
-                throw ValidationException::withMessages([
-                    'campania_id' => 'La campaña inicia el '.$campania->fecha_inicio->format('d/m/Y').'.',
-                ]);
-            }
+            $this->assertEnAtencion($campania);
+            $busqueda = $data['accion'] === 'buscar'
+                ? $this->pacientes->resolverBusqueda($data['tipo_doc'], $data['dni'] ?? null, $consulta)
+                : null;
             $paciente = match ($data['accion']) {
-                'buscar' => $this->pacientes->buscar($data['tipo_doc'], $data['dni'] ?? null),
+                'buscar' => $busqueda['paciente'],
                 'registrar' => $this->pacientes->registrar($data),
                 default => isset($data['paciente_id'])
                     ? $this->pacientes->buscarId((int) $data['paciente_id'])
@@ -78,8 +77,39 @@ class TriajeService
                 );
             }
 
-            return $this->contexto($campania, $paciente, $hoy);
+            $contexto = $this->contexto($campania, $paciente, $hoy);
+            if ($busqueda) {
+                $contexto['consulta_dni'] = $busqueda['consulta_dni'];
+            }
+
+            return $contexto;
         }, attempts: 3);
+    }
+
+    private function campaniaAsignada(User $medico, int $id): Campania
+    {
+        $this->assertMedico($medico);
+
+        return Campania::query()
+            ->whereHas(
+                'asignaciones',
+                fn ($query) => $query->where('usuario_id', $medico->id)->where('tipo', 'M'),
+            )
+            ->findOrFail($id);
+    }
+
+    private function assertEnAtencion(Campania $campania): void
+    {
+        if ($campania->estado !== 'Activa') {
+            throw ValidationException::withMessages([
+                'campania_id' => 'La campaña ya no está activa. Solo se puede registrar durante sus días de atención.',
+            ]);
+        }
+        if (! $campania->estaEnPeriodoAtencion()) {
+            throw ValidationException::withMessages([
+                'campania_id' => 'La campaña inicia el '.$campania->fecha_inicio->format('d/m/Y').'.',
+            ]);
+        }
     }
 
     /** @param list<int> $seleccionados */
@@ -153,7 +183,7 @@ class TriajeService
         $hoja->updated_at = now('America/Lima');
         $hoja->save();
         foreach ($anteriores as $detalle) {
-            if (!in_array($detalle->campania_servicio_id, $seleccionados, true)) {
+            if (! in_array($detalle->campania_servicio_id, $seleccionados, true)) {
                 $detalle->deleted_by = $medico->id;
                 $detalle->delete();
             }

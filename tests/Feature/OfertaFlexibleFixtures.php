@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Database\Factories\OfertaFlexibleUserFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 
 function ofertaFlexibleFixtures(): void
@@ -27,7 +28,9 @@ function ofertaFlexibleFixtures(): void
         'app.key' => 'base64:'.base64_encode(str_repeat('a', 32)),
         'session.driver' => 'array',
         'cache.default' => 'array',
+        'services.dni_api.enabled' => false,
     ]);
+    Http::preventStrayRequests();
     test()->withoutVite();
     test()->travelTo(Carbon::parse('2026-10-20 12:00:00', 'America/Lima'));
     app()->setLocale('es');
@@ -94,11 +97,16 @@ function ofertaFlexibleFixtures(): void
         $table->increments('id');
         $table->string('dni')->nullable();
         $table->string('tipo_doc')->nullable();
-        $table->string('nombres_apellidos');
+        $table->string('nombres', 150);
+        $table->string('apellidos', 150);
         $table->date('fecha_nacimiento');
         $table->string('telefono')->nullable();
         $table->char('sexo', 1)->nullable();
     });
+    DB::statement(
+        'CREATE UNIQUE INDEX UQ_PACIENTES_MOCK_DOCUMENTO '.
+        'ON TB_PACIENTES_MOCK (tipo_doc, dni) WHERE dni IS NOT NULL',
+    );
     $definitions = [
         'TB_CAMPANIAS' => function (Blueprint $table): void {
             $table->string('nombre');
@@ -214,4 +222,36 @@ function ofertaHoja(CampaniaServicio $servicio, ?User $medico = null): HojaRuta
     ]);
 
     return $hoja;
+}
+
+/** @param array<string, mixed> $datos
+ * @return array<string, mixed>
+ */
+function ofertaRespuestaDni(array $datos = []): array
+{
+    return [
+        'respuesta' => 'Solicitud exitosa',
+        'codigo' => '200',
+        'data' => array_replace([
+            'numeroDocumento' => '73050308',
+            'nombres' => '  Juan   Carlos ',
+            'apellidoPaterno' => ' Pérez ',
+            'apellidoMaterno' => ' García ',
+            'fechaNacimiento' => '27/08/1980',
+            'idSexo' => '1',
+            'sexo' => 'MASCULINO',
+            'edad' => '999 Años',
+        ], $datos),
+    ];
+}
+
+function ofertaConfigurarDniApi(): void
+{
+    config([
+        'services.dni_api.enabled' => true,
+        'services.dni_api.url' => 'https://dni.example.test/consulta',
+        'services.dni_api.token' => 'credencial-ficticia-privada',
+        'services.dni_api.timeout' => 8,
+    ]);
+    Http::preventStrayRequests();
 }

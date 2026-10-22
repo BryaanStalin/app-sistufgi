@@ -43,10 +43,12 @@
                             @foreach ($hojas as $hoja)
                                 <tr data-hoja="{{ $hoja->id }}">
                                     <td>
-                                        <span class="fw-semibold d-block">{{ $hoja->nombres_apellidos }}
+                                        <span class="fw-semibold d-block">
+                                            {{ $hoja->nombre_completo }}
                                         </span>
                                         <span class="small text-body-secondary">
-                                            {{ $hoja->tipo_doc ?: 'Sin tipo de documento' }}: {{ $hoja->dni ?: 'Sin número' }}
+                                            {{ $hoja->tipo_doc ?: 'Sin tipo de documento' }}:
+                                            {{ $hoja->dni ?: 'Sin número' }}
                                         </span>
                                     </td>
                                     <td>
@@ -63,8 +65,12 @@
                                     </td>
                                     <td>{{ $hoja->medico }}</td>
                                     <td class="text-center text-nowrap">{{ $hoja->hora_registro }}</td>
-                                    <td>@include('oferta_flexible.partials.estado_impresion')</td>
-                                    <td>@include('oferta_flexible.partials.acciones_hoja')</td>
+                                    <td>
+                                        @include('oferta_flexible.partials.estado_impresion')
+                                    </td>
+                                    <td>
+                                        @include('oferta_flexible.partials.acciones_hoja')
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -74,7 +80,7 @@
                     @foreach ($hojas as $hoja)
                         <article class="card mb-3" data-hoja="{{ $hoja->id }}">
                             <div class="card-body">
-                                <h3 class="h6 mb-1">{{ $hoja->nombres_apellidos }}</h3>
+                                <h3 class="h6 mb-1">{{ $hoja->nombre_completo }}</h3>
                                 <p class="small text-body-secondary mb-3">
                                     {{ $hoja->tipo_doc ?: 'Sin tipo de documento' }}: {{ $hoja->dni ?: 'Sin número' }}
                                 </p>

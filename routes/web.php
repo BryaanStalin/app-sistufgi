@@ -38,6 +38,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/welcome', [DashboardController::class, 'welcome'])->name('welcome');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 
     Route::middleware('menu.access')->group(function () {
@@ -57,7 +58,9 @@ Route::middleware('auth')->group(function () {
             ->middleware(EnsureOfertaFlexibleTriaje::class)
             ->group(function (): void {
                 Route::get('triaje', [TriajeController::class, 'index'])->name('triaje.index');
-                Route::post('triaje', [TriajeController::class, 'store'])->name('triaje.store');
+                Route::post('triaje', [TriajeController::class, 'store'])
+                    ->middleware('throttle:oferta-flexible-dni')
+                    ->name('triaje.store');
             });
         Route::prefix('oferta-flexible')
             ->name('oferta-flexible.')

@@ -53,7 +53,8 @@ function triajeRegistro(string $tipo = 'DNI'): array
         'accion' => 'registrar',
         'tipo_doc' => $tipo,
         'dni' => '01234567',
-        'nombres_apellidos' => 'José Muñoz Cárdenas',
+        'nombres' => 'José',
+        'apellidos' => 'Muñoz Cárdenas',
         'fecha_nacimiento' => '1980-10-20',
         'sexo' => 'M',
         'telefono' => '999123456',
@@ -238,7 +239,8 @@ test('DNI lookup preserves leading zeros and calculates age', function (): void 
     $paciente = PacienteMock::factory()->create([
         'tipo_doc' => 'DNI',
         'dni' => '01234567',
-        'nombres_apellidos' => 'Niña Muñoz',
+        'nombres' => 'Niña',
+        'apellidos' => 'Muñoz',
         'fecha_nacimiento' => '2016-10-20',
     ]);
 
@@ -252,7 +254,7 @@ test('DNI lookup preserves leading zeros and calculates age', function (): void 
         ])
         ->assertOk()
         ->assertJsonPath('paciente.id', $paciente->id)
-        ->assertJsonPath('paciente.nombres_apellidos', 'Niña Muñoz')
+        ->assertJsonPath('paciente.nombre_completo', 'Niña Muñoz')
         ->assertJsonPath('paciente.edad', 10);
 });
 
@@ -317,14 +319,14 @@ test('registration only inserts and never overwrites an existing patient', funct
         ->assertOk()
         ->assertJsonPath('paciente.edad', 46);
     $patient = PacienteMock::firstOrFail();
-    $payload['nombres_apellidos'] = 'No debe sobrescribir';
+    $payload['nombres'] = 'No debe sobrescribir';
 
     $this
         ->postJson(route('oferta-flexible.triaje.store'), $payload)
         ->assertOk()
         ->assertJsonPath('paciente.id', $patient->id);
     $this->assertDatabaseCount('TB_PACIENTES_MOCK', 1);
-    expect($patient->refresh()->nombres_apellidos)->toBe('José Muñoz Cárdenas');
+    expect($patient->refresh()->nombre_completo)->toBe('JOSÉ MUÑOZ CÁRDENAS');
 });
 
 test('undocumented registration creates distinct internal identifiers with inserts only', function (): void {
@@ -371,7 +373,7 @@ test('invalid patient details do not insert a record', function (string $field, 
     ['fecha_nacimiento', '2026-10-21'],
     ['sexo', 'X'],
     ['tipo_doc', 'PASAPORTE'],
-    ['nombres_apellidos', ''],
+    ['nombres', ''],
     ['telefono', str_repeat('9', 151)],
 ]);
 
@@ -652,7 +654,7 @@ test(
         triajeAsignar($medico, $campania);
         $sheet = ofertaHoja($daily, $medico);
         $sheet->paciente->update([
-            'nombres_apellidos' => 'Paciente Ficticia Muñoz Quiñones con Nombres y Apellidos Extensos para Verificación Móvil',
+            'nombres' => 'Paciente Ficticia Muñoz Quiñones con Nombres y Apellidos Extensos para Verificación Móvil',
             'dni' => '01234567',
         ]);
         CampaniaServicio::factory()->create(['campania_id' => $campania->id]);
@@ -660,7 +662,7 @@ test(
             ->actingAs($medico)
             ->get(route('oferta-flexible.triaje.index'))
             ->assertOk()
-            ->assertDontSee($sheet->paciente->nombres_apellidos)
+            ->assertDontSee($sheet->paciente->nombre_completo)
             ->assertDontSee('<table', false)
             ->assertSee('inputmode="numeric"', false);
         $document = new DOMDocument;
@@ -671,6 +673,7 @@ test(
                 'triaje-tipo',
                 'triaje-numero',
                 'triaje-nombres',
+                'triaje-apellidos',
                 'triaje-nacimiento',
                 'triaje-sexo',
                 'triaje-telefono',

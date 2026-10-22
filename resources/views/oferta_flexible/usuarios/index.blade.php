@@ -2,7 +2,7 @@
 @section('title', 'Gestión de Usuarios para Campañas')
 @section('script', 'oferta_flexible/usuarios/index')
 @section('content')
-    <div class="container-fluid oferta-admin">
+    <div class="container-fluid oferta-admin" data-campania-id="{{ $campania?->id }}">
         @include('oferta_flexible.partials.encabezado', [
             'icono' => 'bi-people',
             'titulo' => 'Gestión de Usuarios para Campañas',
