@@ -1,69 +1,135 @@
-@if(!$campania)
-    <div class="alert alert-info">No tiene campañas disponibles asignadas a Admisión.</div>
+@if (!$campania)
+    <div class="card">
+        @include('oferta_flexible.partials.vacio', [
+            'mensajeVacio' => $esAdministrador
+                ? 'No hay campañas activas disponibles.'
+                : 'No tiene campañas disponibles asignadas a Admisión.',
+            'iconoVacio' => 'bi-calendar2-week',
+        ])
+    </div>
 @else
-    <div class="mb-3">
-        <h2 class="h5 mb-2">{{ $campania->nombre }} <span class="badge bg-secondary">{{ $campania->estado }}</span></h2>
-        @if($campania->asociar_triaje_admision)
-            <p class="mb-0"><strong>Médicos enlazados:</strong> {{ $medicos->pluck('nombre')->join(', ') ?: 'No tiene médicos enlazados en esta campaña.' }}</p>
-        @else
-            <p class="mb-0">Esta campaña no requiere enlaces: puede consultar las hojas de todos sus médicos.</p>
-        @endif
-    </div>
-    @if($campania->cerrada)
-        <div class="alert alert-info">Campaña cerrada: puede consultar e imprimir. No se permite eliminar hojas.</div>
-    @endif
-    <p class="small text-muted">{{ $hojas->total() }} {{ $hojas->total() === 1 ? 'paciente encontrado' : 'pacientes encontrados' }} · {{ \Carbon\CarbonImmutable::parse($filters['fecha'])->format('d/m/Y') }}</p>
-    <div class="admision-hojas">
-        @forelse($hojas as $hoja)
-            <article class="card mb-3" data-hoja="{{ $hoja->id }}">
-                <div class="card-body">
-                    <div class="admision-datos">
-                        <div>
-                            <h3 class="h6 mb-1">{{ $hoja->nombres_apellidos }}</h3>
-                            <p class="small text-muted mb-2">{{ $hoja->tipo_doc ?: 'Sin tipo de documento' }}: {{ $hoja->dni ?: 'Sin número' }}</p>
-                            @if($hoja->modificada)<span class="badge bg-warning text-dark mb-2">Modificada</span>@endif
-                        </div>
-                        <div>
-                            <p class="small fw-semibold mb-1">Servicios</p>
-                            <ul class="ps-3 mb-2">@foreach($hoja->servicios as $servicio)<li>{{ $servicio }}</li>@endforeach</ul>
-                        </div>
-                        <dl class="small mb-2">
-                            <dt>Médico</dt><dd>{{ $hoja->medico }}</dd>
-                            <dt>Hora de registro</dt><dd>{{ $hoja->hora_registro }}</dd>
-                        </dl>
-                        <dl class="small mb-2">
-                            <dt>Impresiones</dt><dd>{{ $hoja->cantidad_impresiones }}</dd>
-                            <dt>Última impresión</dt><dd>{{ $hoja->ultima_impresion_texto }}</dd>
-                        </dl>
-                    </div>
-                    <div class="admision-acciones">
-                        <form method="POST" action="{{ route('oferta-flexible.admision.imprimir') }}" target="_blank" rel="noopener" class="admision-imprimir">
-                            @csrf
-                            <input type="hidden" name="campania_id" value="{{ $campania->id }}">
-                            <input type="hidden" name="hoja_id" value="{{ $hoja->id }}">
-                            <button type="submit" class="btn btn-primary w-100" aria-label="Imprimir hoja de {{ $hoja->nombres_apellidos }}">Imprimir hoja de ruta</button>
-                        </form>
-                        @unless($campania->cerrada)
-                            <button class="btn btn-outline-danger admision-eliminar" type="button" data-hoja="{{ $hoja->id }}"
-                                    data-campania="{{ $campania->id }}" data-url="{{ route('oferta-flexible.admision.destroy') }}"
-                                    aria-label="Eliminar hoja de {{ $hoja->nombres_apellidos }}">Eliminar</button>
-                        @endunless
-                    </div>
-                </div>
-            </article>
-        @empty
-            <div class="alert alert-light border">No se encontraron pacientes con los filtros seleccionados.</div>
-        @endforelse
-    </div>
-    @if($hojas->hasPages())
-        <nav aria-label="Páginas del listado de pacientes" class="admision-paginacion d-flex flex-wrap gap-2 align-items-center">
-            @if($hojas->onFirstPage())
-                <span class="btn btn-outline-secondary disabled">Anterior</span>
+    <template data-admision-contexto>
+        @include('oferta_flexible.partials.contexto_admision')
+    </template>
+    <div class="card">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h2 class="h6 mb-0">Hojas de ruta</h2>
+            <p class="small text-body-secondary mb-0">
+                {{ $hojas->total() }} {{ $hojas->total() === 1 ? 'paciente encontrado' : 'pacientes encontrados' }}
+                · {{ \Carbon\CarbonImmutable::parse($filters['fecha'])->format('d/m/Y') }}
+            </p>
+        </div>
+        <div class="card-body">
+            @if ($hojas->isEmpty())
+                @include('oferta_flexible.partials.vacio', [
+                    'mensajeVacio' => 'No se encontraron pacientes con los filtros seleccionados.',
+                    'ayudaVacio' => 'Revise la fecha, el médico o el documento ingresado.',
+                    'iconoVacio' => 'bi-search',
+                ])
             @else
-                <a class="btn btn-outline-primary" href="{{ $hojas->previousPageUrl() }}">Anterior</a>
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle admision-table">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Servicios</th>
+                                <th>Médico</th>
+                                <th class="text-center">Hora</th>
+                                <th>Impresión</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($hojas as $hoja)
+                                <tr data-hoja="{{ $hoja->id }}">
+                                    <td>
+                                        <span class="fw-semibold d-block">{{ $hoja->nombres_apellidos }}
+                                        </span>
+                                        <span class="small text-body-secondary">
+                                            {{ $hoja->tipo_doc ?: 'Sin tipo de documento' }}: {{ $hoja->dni ?: 'Sin número' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach ($hoja->servicios as $servicio)
+                                                <span
+                                                    class="badge oferta-badge oferta-badge-secondary
+                                                    admision-service-badge"
+                                                >
+                                                    {{ $servicio }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </td>
+                                    <td>{{ $hoja->medico }}</td>
+                                    <td class="text-center text-nowrap">{{ $hoja->hora_registro }}</td>
+                                    <td>@include('oferta_flexible.partials.estado_impresion')</td>
+                                    <td>@include('oferta_flexible.partials.acciones_hoja')</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="admision-hojas d-md-none">
+                    @foreach ($hojas as $hoja)
+                        <article class="card mb-3" data-hoja="{{ $hoja->id }}">
+                            <div class="card-body">
+                                <h3 class="h6 mb-1">{{ $hoja->nombres_apellidos }}</h3>
+                                <p class="small text-body-secondary mb-3">
+                                    {{ $hoja->tipo_doc ?: 'Sin tipo de documento' }}: {{ $hoja->dni ?: 'Sin número' }}
+                                </p>
+                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                    @foreach ($hoja->servicios as $servicio)
+                                        <span
+                                            class="badge oferta-badge oferta-badge-secondary
+                                                    admision-service-badge"
+                                        >
+                                            {{ $servicio }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                                <p class="small mb-1">
+                                    <strong>Médico:</strong>
+                                    {{ $hoja->medico }}
+                                </p>
+                                <p class="small mb-3">
+                                    <strong>Hora de registro:</strong>
+                                    {{ $hoja->hora_registro }}
+                                </p>
+                                @include('oferta_flexible.partials.estado_impresion')
+                                <div class="border-top mt-3 pt-3">
+                                    @include('oferta_flexible.partials.acciones_hoja')
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
             @endif
-            <span class="small">Página {{ $hojas->currentPage() }} de {{ $hojas->lastPage() }}</span>
-            @if($hojas->hasMorePages())<a class="btn btn-outline-primary" href="{{ $hojas->nextPageUrl() }}">Siguiente</a>@endif
-        </nav>
-    @endif
+            @if ($hojas->hasPages())
+                <nav
+                    aria-label="Páginas del listado de pacientes"
+                    class="admision-paginacion d-flex flex-wrap gap-2 align-items-center mt-3"
+                >
+                    @if ($hojas->onFirstPage())
+                        <span class="btn btn-secondary disabled" aria-disabled="true">
+                            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                            Anterior
+                        </span>
+                    @else
+                        <a class="btn btn-primary" href="{{ $hojas->previousPageUrl() }}">
+                            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                            Anterior
+                        </a>
+                    @endif
+                    <span class="small">Página {{ $hojas->currentPage() }} de {{ $hojas->lastPage() }}</span>
+                    @if ($hojas->hasMorePages())
+                        <a class="btn btn-primary" href="{{ $hojas->nextPageUrl() }}">
+                            Siguiente
+                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                        </a>
+                    @endif
+                </nav>
+            @endif
+        </div>
+    </div>
 @endif

@@ -11,19 +11,27 @@ use Illuminate\Http\Request;
 
 class TriajeController extends Controller
 {
-    public function __construct(protected TriajeService $service) {}
+    public function __construct(protected TriajeService $service)
+    {
+    }
 
     public function index(Request $request): View
     {
         $filters = $request->validate(['campania_id' => 'nullable|integer|min:1']);
         $campanias = $this->service->campanias($request->user());
-        $seleccionada = isset($filters['campania_id']) ? $campanias->firstWhere('id', (int) $filters['campania_id']) : $campanias->first();
+        $seleccionada = isset($filters['campania_id'])
+            ? $campanias->firstWhere('id', (int) $filters['campania_id'])
+            : $campanias->first(fn ($campania): bool => $campania->estaEnPeriodoAtencion()) ??
+                $campanias->first();
         if (isset($filters['campania_id'])) {
             abort_unless($seleccionada, 404);
         }
 
-        return view('oferta_flexible.triaje.index', ['campanias' => $campanias, 'seleccionada' => $seleccionada,
-            'tiposDocumento' => PacienteService::TIPOS_DOCUMENTO]);
+        return view('oferta_flexible.triaje.index', [
+            'campanias' => $campanias,
+            'seleccionada' => $seleccionada,
+            'tiposDocumento' => PacienteService::TIPOS_DOCUMENTO,
+        ]);
     }
 
     public function store(TriajeRequest $request): JsonResponse

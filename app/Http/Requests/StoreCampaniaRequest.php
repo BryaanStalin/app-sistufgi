@@ -12,8 +12,8 @@ class StoreCampaniaRequest extends OfertaFlexibleRequest
         $value = $this->input('servicios_config');
         $config = is_string($value) ? json_decode($value, true) : null;
         $this->merge([
-            'servicios_generales' => is_array($config) ? ($config['generales'] ?? null) : null,
-            'servicios_dia' => is_array($config) ? ($config['diarios'] ?? null) : null,
+            'servicios_generales' => is_array($config) ? $config['generales'] ?? null : null,
+            'servicios_dia' => is_array($config) ? $config['diarios'] ?? null : null,
         ]);
     }
 
@@ -24,7 +24,8 @@ class StoreCampaniaRequest extends OfertaFlexibleRequest
             'nombre' => ['required', 'string', 'max:200'],
             'fecha_inicio' => ['required', 'date_format:Y-m-d'],
             'fecha_fin' => ['required', 'date_format:Y-m-d', 'after_or_equal:fecha_inicio'],
-            'asociar_triaje_admision' => ['required', 'boolean'], 'mismos_servicios' => ['required', 'boolean'],
+            'asociar_triaje_admision' => ['required', 'boolean'],
+            'mismos_servicios' => ['required', 'boolean'],
             'sobrescribir_personalizados' => ['sometimes', 'boolean'],
             'servicios_generales' => ['required_if:mismos_servicios,1', 'array'],
             'servicios_generales.*' => ['array:ups_id,cupos'],

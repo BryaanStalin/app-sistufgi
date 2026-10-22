@@ -14,6 +14,11 @@ class HojaRutaFactory extends Factory
 
     public function definition(): array
     {
-        return ['campania_id' => Campania::factory(), 'paciente_id' => PacienteMock::factory(), 'medico_usuario_id' => OfertaFlexibleUserFactory::new(), 'fecha_atencion' => today()];
+        return [
+            'campania_id' => Campania::factory(),
+            'paciente_id' => PacienteMock::factory(),
+            'medico_usuario_id' => OfertaFlexibleUserFactory::new(),
+            'fecha_atencion' => today(),
+        ];
     }
 }

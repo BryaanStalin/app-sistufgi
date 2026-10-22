@@ -13,6 +13,10 @@ class CampaniaEnlaceFactory extends Factory
 
     public function definition(): array
     {
-        return ['campania_id' => Campania::factory(), 'medico_usuario_id' => OfertaFlexibleUserFactory::new(), 'admision_usuario_id' => OfertaFlexibleUserFactory::new()];
+        return [
+            'campania_id' => Campania::factory(),
+            'medico_usuario_id' => OfertaFlexibleUserFactory::new(),
+            'admision_usuario_id' => OfertaFlexibleUserFactory::new(),
+        ];
     }
 }

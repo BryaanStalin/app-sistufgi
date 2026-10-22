@@ -12,6 +12,11 @@ class ServicioUpsFactory extends Factory
 
     public function definition(): array
     {
-        return ['ID_UPS' => fake()->unique()->numberBetween(100, 999999), 'DESCRIPCION_UPS' => 'Atención '.fake()->unique()->word(), 'TIPO_UPS' => 'P', 'ACTIVO' => true];
+        return [
+            'ID_UPS' => fake()->unique()->numberBetween(100, 999999),
+            'DESCRIPCION_UPS' => 'Atención '.fake()->unique()->word(),
+            'TIPO_UPS' => 'P',
+            'ACTIVO' => true,
+        ];
     }
 }

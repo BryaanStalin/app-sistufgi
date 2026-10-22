@@ -1,17 +1,124 @@
-.admision { max-width: 1440px; }
-.admision .card, .admision .admision-datos > * { min-width: 0; }
-.admision .card-body, .admision h1, .admision h2, .admision dd, .admision li { overflow-wrap: anywhere; }
-.admision .btn, .admision .form-control, .admision .form-select { min-height: 44px; }
-.admision input[type="date"] { min-width: 0; max-width: 100%; }
-.admision .admision-datos { display: grid; gap: 12px; }
-.admision .admision-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
-.admision .admision-acciones > * { flex: 1 1 180px; }
-.admision .admision-acciones .btn { white-space: normal; }
-.admision .admision-paginacion .btn { display: inline-flex; align-items: center; }
-@media (min-width: 768px) {
-    .admision .admision-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .admision .admision-acciones > * { flex: 0 1 220px; }
+.admision {
+    max-width: 1440px;
 }
-@media (min-width: 1200px) {
-    .admision .admision-datos { grid-template-columns: 1.2fr 1.2fr 1fr 1fr; }
+
+.admision .card,
+.admision .card-body,
+.admision .row > * {
+    min-width: 0;
+}
+
+.admision h1,
+.admision h2,
+.admision h3,
+.admision td,
+.admision p {
+    overflow-wrap: anywhere;
+}
+
+.admision .btn,
+.admision .form-control,
+.admision .form-select {
+    min-height: 44px;
+}
+
+.admision input[type='date'] {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.admision-summary-icon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    font-size: 1.3rem;
+}
+
+.admision .admision-summary .card-body {
+    padding: 1rem;
+}
+
+.admision .admision-table {
+    min-width: 58rem;
+}
+
+.admision .admision-table td:first-child {
+    min-width: 12rem;
+}
+
+.admision .admision-service-badge {
+    max-width: 100%;
+    font-weight: 500;
+    text-align: left;
+    white-space: normal;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.admision .admision-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admision .admision-acciones .btn {
+    white-space: nowrap;
+}
+
+.admision .admision-poll-dot {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: #185937;
+}
+
+.admision .admision-poll-dot[data-active='false'] {
+    background-color: #65768c;
+}
+
+.admision #admision-listado {
+    transition: opacity 150ms ease;
+}
+
+.admision #admision-listado[aria-busy='true'] {
+    opacity: 0.6;
+}
+
+.admision #admision-error:focus-visible {
+    outline: 3px solid #1765b5;
+    outline-offset: 3px;
+}
+
+@media (max-width: 767.98px) {
+    .admision .admision-summary .card-body {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    .admision .admision-acciones {
+        justify-content: flex-end;
+    }
+
+    .admision .admision-action-button {
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        padding: 0.5rem;
+    }
+
+    .admision .admision-action-text {
+        display: none;
+    }
+
+    .admision .admision-action-button[aria-busy='true'] > .bi {
+        display: none;
+    }
 }

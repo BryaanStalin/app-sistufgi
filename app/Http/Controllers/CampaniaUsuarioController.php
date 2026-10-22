@@ -14,18 +14,37 @@ use Illuminate\Http\Request;
 
 class CampaniaUsuarioController extends Controller
 {
-    public function __construct(protected CampaniaUsuarioService $service) {}
+    public function __construct(protected CampaniaUsuarioService $service)
+    {
+    }
 
     public function index(Request $request): View
     {
-        $filters = $request->validate(['campania_id' => 'nullable|integer|exists:TB_CAMPANIAS,id', 'solo_activas' => 'nullable|boolean']);
-        $campanias = Campania::query()->when($request->boolean('solo_activas'), fn ($query) => $query->where('cerrada', 0)
-            ->where('fecha_inicio', '<=', today())->where('fecha_fin', '>=', today()))->orderByDesc('fecha_inicio')->orderByDesc('id')->get();
-        $campania = isset($filters['campania_id']) ? Campania::query()->with(['asignaciones.usuario', 'enlaces.medico', 'enlaces.admision'])->findOrFail($filters['campania_id']) : null;
-        $medicos = OfertaFlexibleAccess::usuariosConRol('Médico Triaje')->orderBy('nombre')->get(['id', 'nombre', 'user']);
-        $admisiones = OfertaFlexibleAccess::usuariosConRol('Admisión')->orderBy('nombre')->get(['id', 'nombre', 'user']);
+        $filters = $request->validate([
+            'campania_id' => 'nullable|integer|exists:TB_CAMPANIAS,id',
+            'solo_activas' => 'nullable|boolean',
+        ]);
+        $campanias = Campania::query()
+            ->when($request->boolean('solo_activas'), fn ($query) => $query->activas())
+            ->orderByDesc('fecha_inicio')
+            ->orderByDesc('id')
+            ->get();
+        $campania = isset($filters['campania_id'])
+            ? Campania::query()
+                ->with(['asignaciones.usuario', 'enlaces.medico', 'enlaces.admision'])
+                ->findOrFail($filters['campania_id'])
+            : null;
+        $medicos = OfertaFlexibleAccess::usuariosConRol('Médico Triaje')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'user']);
+        $admisiones = OfertaFlexibleAccess::usuariosConRol('Admisión')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'user']);
 
-        return view('oferta_flexible.usuarios.index', compact('campanias', 'campania', 'medicos', 'admisiones'));
+        return view(
+            'oferta_flexible.usuarios.index',
+            compact('campanias', 'campania', 'medicos', 'admisiones'),
+        );
     }
 
     public function store(StoreCampaniaUsuarioRequest $request, Campania $campania): RedirectResponse

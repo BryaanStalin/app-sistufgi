@@ -14,6 +14,13 @@ class CampaniaServicioFactory extends Factory
 
     public function definition(): array
     {
-        return ['campania_id' => Campania::factory(), 'ups_id' => ServicioUps::factory(), 'fecha_servicio' => today(), 'cupos' => 10, 'cupo_base' => 10, 'cupo_personalizado' => false];
+        return [
+            'campania_id' => Campania::factory(),
+            'ups_id' => ServicioUps::factory(),
+            'fecha_servicio' => today(),
+            'cupos' => 10,
+            'cupo_base' => 10,
+            'cupo_personalizado' => false,
+        ];
     }
 }

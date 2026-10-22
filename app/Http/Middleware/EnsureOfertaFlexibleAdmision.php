@@ -17,9 +17,10 @@ class EnsureOfertaFlexibleAdmision
     public function handle(Request $request, Closure $next): Response
     {
         abort_unless(
-            OfertaFlexibleAccess::hasRole($request->user(), 'Admisión') || OfertaFlexibleAccess::hasRole($request->user(), 'Administrador'),
-            403, 
-            'Solo Admisión puede acceder a este módulo.');
+            OfertaFlexibleAccess::puedeConsultarPacientes($request->user()),
+            403,
+            'Solo Admisión o el Administrador pueden acceder a este módulo.',
+        );
 
         return $next($request);
     }

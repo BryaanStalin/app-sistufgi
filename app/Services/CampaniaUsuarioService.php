@@ -17,18 +17,35 @@ class CampaniaUsuarioService
         DB::transaction(function () use ($campania, $data, $actorId): void {
             $campania = $this->editable($campania);
             foreach (array_unique($data['usuarios']) as $usuarioId) {
-                $medico = OfertaFlexibleAccess::usuariosConRol('Médico Triaje')->lockForUpdate()->find($usuarioId);
-                $admision = OfertaFlexibleAccess::usuariosConRol('Admisión')->lockForUpdate()->find($usuarioId);
+                $medico = OfertaFlexibleAccess::usuariosConRol('Médico Triaje')
+                    ->lockForUpdate()
+                    ->find($usuarioId);
+                $admision = OfertaFlexibleAccess::usuariosConRol('Admisión')
+                    ->lockForUpdate()
+                    ->find($usuarioId);
                 if (($medico === null) === ($admision === null)) {
-                    $this->fail('Cada usuario debe estar activo y tener un único tipo de rol de campaña activo.');
+                    $this->fail(
+                        'Cada usuario debe estar activo y tener un único tipo de rol de campaña activo.',
+                    );
                 }
-                $asignacion = $campania->asignaciones()->where('usuario_id', $usuarioId)->first();
+                $asignacion = $campania
+                    ->asignaciones()
+                    ->where('usuario_id', $usuarioId)
+                    ->first();
                 $tipo = $medico ? 'M' : 'A';
                 if ($asignacion !== null && $asignacion->tipo !== $tipo) {
-                    $this->fail('El usuario cambió de rol. Retire su asignación anterior antes de reasignarlo.');
+                    $this->fail(
+                        'El usuario cambió de rol. Retire su asignación anterior antes de reasignarlo.',
+                    );
                 }
                 if ($asignacion === null) {
-                    CampaniaUsuario::create(['campania_id' => $campania->id, 'usuario_id' => $usuarioId, 'tipo' => $tipo, 'created_by' => $actorId, 'updated_by' => $actorId]);
+                    CampaniaUsuario::create([
+                        'campania_id' => $campania->id,
+                        'usuario_id' => $usuarioId,
+                        'tipo' => $tipo,
+                        'created_by' => $actorId,
+                        'updated_by' => $actorId,
+                    ]);
                 }
             }
         });
@@ -38,16 +55,40 @@ class CampaniaUsuarioService
     {
         DB::transaction(function () use ($campania, $asignacion, $actorId): void {
             $campania = $this->editable($campania);
-            $asignacion = $campania->asignaciones()->lockForUpdate()->findOrFail($asignacion->id);
+            $asignacion = $campania
+                ->asignaciones()
+                ->lockForUpdate()
+                ->findOrFail($asignacion->id);
             $usuarioId = $asignacion->usuario_id;
-            if ($campania->enlaces()->where(function ($query) use ($usuarioId): void {
-                $query->where('medico_usuario_id', $usuarioId)->orWhere('admision_usuario_id', $usuarioId);
-            })->exists()) {
+            if (
+                $campania
+                    ->enlaces()
+                    ->where(function ($query) use ($usuarioId): void {
+                        $query
+                            ->where('medico_usuario_id', $usuarioId)
+                            ->orWhere('admision_usuario_id', $usuarioId);
+                    })
+                    ->exists()
+            ) {
                 $this->fail('Quite primero los enlaces del usuario en esta campaña.');
             }
-            if ($campania->hojas()->withTrashed()->where('medico_usuario_id', $usuarioId)->exists()
-                || HojaRutaImpresion::query()->where('impreso_por', $usuarioId)->whereHas('hoja', fn ($query) => $query->withTrashed()->where('campania_id', $campania->id))->exists()) {
-                $this->fail('No se puede quitar un usuario con historial de hojas o impresiones en esta campaña.');
+            if (
+                $campania
+                    ->hojas()
+                    ->withTrashed()
+                    ->where('medico_usuario_id', $usuarioId)
+                    ->exists() ||
+                HojaRutaImpresion::query()
+                    ->where('impreso_por', $usuarioId)
+                    ->whereHas(
+                        'hoja',
+                        fn ($query) => $query->withTrashed()->where('campania_id', $campania->id),
+                    )
+                    ->exists()
+            ) {
+                $this->fail(
+                    'No se puede quitar un usuario con historial de hojas o impresiones en esta campaña.',
+                );
             }
             $asignacion->deleted_by = $actorId;
             $asignacion->delete();
@@ -59,20 +100,46 @@ class CampaniaUsuarioService
     {
         DB::transaction(function () use ($campania, $data, $actorId): void {
             $campania = $this->editable($campania);
-            if (! $campania->asociar_triaje_admision || $campania->cerrada
-                || $campania->fecha_inicio->gt(today('America/Lima')) || $campania->fecha_fin->lt(today('America/Lima'))) {
-                $this->fail('Solo se pueden enlazar usuarios en campañas activas con asociación de Triaje y Admisión.');
+            if (! $campania->asociar_triaje_admision || $campania->estado !== 'Activa') {
+                $this->fail(
+                    'Solo se pueden enlazar usuarios en campañas activas con asociación de Triaje y Admisión.',
+                );
             }
-            foreach (['medico_usuario_id' => ['M', 'Médico Triaje'], 'admision_usuario_id' => ['A', 'Admisión']] as $campo => [$tipo, $rol]) {
-                if (! $campania->asignaciones()->where('usuario_id', $data[$campo])->where('tipo', $tipo)->exists()
-                    || ! OfertaFlexibleAccess::usuariosConRol($rol)->lockForUpdate()->whereKey($data[$campo])->exists()) {
-                    $this->fail('Los usuarios deben estar activos, tener el rol correcto y estar asignados a esta campaña.');
+            foreach (
+                [
+                    'medico_usuario_id' => ['M', 'Médico Triaje'],
+                    'admision_usuario_id' => ['A', 'Admisión'],
+                ] as $campo => [$tipo, $rol]
+            ) {
+                if (
+                    ! $campania
+                        ->asignaciones()
+                        ->where('usuario_id', $data[$campo])
+                        ->where('tipo', $tipo)
+                        ->exists() ||
+                    ! OfertaFlexibleAccess::usuariosConRol($rol)
+                        ->lockForUpdate()
+                        ->whereKey($data[$campo])
+                        ->exists()
+                ) {
+                    $this->fail(
+                        'Los usuarios deben estar activos, tener el rol correcto y estar asignados a esta campaña.',
+                    );
                 }
             }
-            if ($campania->enlaces()->where('medico_usuario_id', $data['medico_usuario_id'])->exists()) {
-                $this->fail('El médico ya está enlazado a un admisionista. Quite primero el enlace existente.');
+            if (
+                $campania
+                    ->enlaces()
+                    ->where('medico_usuario_id', $data['medico_usuario_id'])
+                    ->exists()
+            ) {
+                $this->fail(
+                    'El médico ya está enlazado a un admisionista. Quite primero el enlace existente.',
+                );
             }
-            CampaniaEnlace::create($data + ['campania_id' => $campania->id, 'created_by' => $actorId, 'updated_by' => $actorId]);
+            CampaniaEnlace::create(
+                $data + ['campania_id' => $campania->id, 'created_by' => $actorId, 'updated_by' => $actorId],
+            );
         });
     }
 
@@ -80,7 +147,10 @@ class CampaniaUsuarioService
     {
         DB::transaction(function () use ($campania, $enlace, $actorId): void {
             $campania = $this->editable($campania);
-            $enlace = $campania->enlaces()->lockForUpdate()->findOrFail($enlace->id);
+            $enlace = $campania
+                ->enlaces()
+                ->lockForUpdate()
+                ->findOrFail($enlace->id);
             $enlace->deleted_by = $actorId;
             $enlace->delete();
         });
@@ -88,7 +158,9 @@ class CampaniaUsuarioService
 
     private function editable(Campania $campania): Campania
     {
-        $campania = Campania::query()->lockForUpdate()->findOrFail($campania->id);
+        $campania = Campania::query()
+            ->lockForUpdate()
+            ->findOrFail($campania->id);
         $campania->assertEditable();
 
         return $campania;

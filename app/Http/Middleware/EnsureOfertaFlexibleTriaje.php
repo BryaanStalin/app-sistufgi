@@ -12,9 +12,10 @@ class EnsureOfertaFlexibleTriaje
     public function handle(Request $request, Closure $next): Response
     {
         abort_unless(
-            OfertaFlexibleAccess::hasRole($request->user(), 'Médico Triaje') || OfertaFlexibleAccess::hasRole($request->user(), 'Administrador'),
+            OfertaFlexibleAccess::hasRole($request->user(), 'Médico Triaje') ||
+                OfertaFlexibleAccess::hasRole($request->user(), 'Administrador'),
             403,
-            'Solo el Médico Triaje puede acceder a este módulo.'
+            'Solo el Médico Triaje puede acceder a este módulo.',
         );
 
         return $next($request);

@@ -4,10 +4,11 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class ValidateMenuAccess
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $usuario = auth()->user();
 
@@ -19,7 +20,9 @@ class ValidateMenuAccess
             return $next($request);
         }
 
-        $rutaActual = '/' . trim($request->path(), '/');
+        $rutaActual = $request->routeIs('oferta-flexible.admision.pdf')
+            ? '/oferta-flexible/admision'
+            : '/'.trim($request->path(), '/');
         $rutasPermitidas = $usuario->getAllowedMenuPaths();
 
         if (in_array($rutaActual, $rutasPermitidas, true)) {

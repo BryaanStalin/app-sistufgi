@@ -48,3 +48,74 @@
 .oferta-triaje [hidden] {
     display: none !important;
 }
+
+.oferta-triaje.oferta-admin .card-body {
+    padding: 1rem;
+}
+
+.oferta-triaje .triaje-servicio-card {
+    border-color: #dce3ec !important;
+    background-color: #fff;
+}
+
+.oferta-triaje .triaje-servicio-card .oferta-badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    white-space: normal;
+}
+
+.oferta-triaje .triaje-cupo-ayuda {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.oferta-triaje .oferta-heading {
+    padding: 1rem;
+}
+
+.oferta-triaje .oferta-heading-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .oferta-triaje .triaje-quitar {
+        width: 44px;
+        min-width: 44px;
+        padding: 0.5rem;
+    }
+
+    .oferta-triaje .triaje-quitar-texto {
+        display: none;
+    }
+
+    .oferta-triaje #triaje-servicios {
+        padding-bottom: 5.5rem;
+    }
+
+    .oferta-triaje .triaje-grabar-panel {
+        position: fixed;
+        inset-inline: 0;
+        bottom: 0;
+        z-index: 1030;
+        max-width: 48rem;
+        margin-inline: auto;
+        padding: 0.75rem 1rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+        border-top: 1px solid #cbd7e6;
+        background-color: #fff;
+        box-shadow: 0 -3px 14px rgb(24 46 76 / 10%);
+    }
+
+    .oferta-triaje #triaje-grabar {
+        min-height: 48px;
+    }
+
+    .oferta-triaje input,
+    .oferta-triaje button,
+    .oferta-triaje select {
+        scroll-margin-bottom: 7rem;
+    }
+}

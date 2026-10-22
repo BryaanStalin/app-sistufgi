@@ -11,7 +11,11 @@ class EnsureOfertaFlexibleAdministrator
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless(OfertaFlexibleAccess::hasRole($request->user(), 'Administrador'), 403, 'Solo el Administrador puede acceder a este módulo.');
+        abort_unless(
+            OfertaFlexibleAccess::hasRole($request->user(), 'Administrador'),
+            403,
+            'Solo el Administrador puede acceder a este módulo.',
+        );
 
         return $next($request);
     }

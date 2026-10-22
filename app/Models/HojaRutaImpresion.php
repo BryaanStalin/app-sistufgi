@@ -19,7 +19,15 @@ class HojaRutaImpresion extends Model
 
     protected $fillable = ['hoja_ruta_id', 'impreso_por', 'impreso_at', 'created_at', 'created_by'];
 
-    protected $casts = ['hoja_ruta_id' => 'integer', 'impreso_por' => 'integer', 'created_by' => 'integer', 'updated_by' => 'integer', 'deleted_by' => 'integer', 'impreso_at' => 'datetime', 'created_at' => 'datetime'];
+    protected $casts = [
+        'hoja_ruta_id' => 'integer',
+        'impreso_por' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+        'deleted_by' => 'integer',
+        'impreso_at' => 'datetime',
+        'created_at' => 'datetime',
+    ];
 
     protected static function booted(): void
     {

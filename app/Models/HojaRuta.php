@@ -9,9 +9,25 @@ class HojaRuta extends OfertaFlexibleModel
 {
     protected $table = 'TB_HOJAS_RUTA';
 
-    protected $fillable = ['campania_id', 'paciente_id', 'fecha_atencion', 'medico_usuario_id', 'created_by', 'updated_by', 'deleted_by'];
+    protected $fillable = [
+        'campania_id',
+        'paciente_id',
+        'fecha_atencion',
+        'medico_usuario_id',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
 
-    protected $casts = ['campania_id' => 'integer', 'paciente_id' => 'integer', 'medico_usuario_id' => 'integer', 'created_by' => 'integer', 'updated_by' => 'integer', 'deleted_by' => 'integer', 'fecha_atencion' => 'immutable_datetime'];
+    protected $casts = [
+        'campania_id' => 'integer',
+        'paciente_id' => 'integer',
+        'medico_usuario_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+        'deleted_by' => 'integer',
+        'fecha_atencion' => 'immutable_datetime',
+    ];
 
     public function campania(): BelongsTo
     {

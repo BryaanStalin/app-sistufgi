@@ -8,9 +8,23 @@ class CampaniaEnlace extends OfertaFlexibleModel
 {
     protected $table = 'TB_CAMPANIA_ENLACES';
 
-    protected $fillable = ['campania_id', 'medico_usuario_id', 'admision_usuario_id', 'created_by', 'updated_by', 'deleted_by'];
+    protected $fillable = [
+        'campania_id',
+        'medico_usuario_id',
+        'admision_usuario_id',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
 
-    protected $casts = ['campania_id' => 'integer', 'medico_usuario_id' => 'integer', 'admision_usuario_id' => 'integer', 'created_by' => 'integer', 'updated_by' => 'integer', 'deleted_by' => 'integer'];
+    protected $casts = [
+        'campania_id' => 'integer',
+        'medico_usuario_id' => 'integer',
+        'admision_usuario_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+        'deleted_by' => 'integer',
+    ];
 
     public function campania(): BelongsTo
     {

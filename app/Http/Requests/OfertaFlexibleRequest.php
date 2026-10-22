@@ -32,9 +32,17 @@ abstract class OfertaFlexibleRequest extends FormRequest
 
     public function attributes(): array
     {
-        return ['nombre' => 'nombre', 'fecha_inicio' => 'fecha inicio', 'fecha_fin' => 'fecha fin',
-            'TIPO_UPS' => 'tipo UPSS', 'ID_UPS' => 'código UPSS', 'DESCRIPCION_UPS' => 'descripción UPSS',
-            'servicios_generales.*.cupos' => 'cupo general', 'servicios_dia.*.cupos' => 'cupo diario',
-            'usuarios' => 'usuarios', 'confirmar' => 'confirmación'];
+        return [
+            'nombre' => 'nombre',
+            'fecha_inicio' => 'fecha inicio',
+            'fecha_fin' => 'fecha fin',
+            'TIPO_UPS' => 'tipo UPSS',
+            'ID_UPS' => 'código UPSS',
+            'DESCRIPCION_UPS' => 'descripción UPSS',
+            'servicios_generales.*.cupos' => 'cupo general',
+            'servicios_dia.*.cupos' => 'cupo diario',
+            'usuarios' => 'usuarios',
+            'confirmar' => 'confirmación',
+        ];
     }
 }

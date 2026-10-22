@@ -13,6 +13,10 @@ class CampaniaUsuarioFactory extends Factory
 
     public function definition(): array
     {
-        return ['campania_id' => Campania::factory(), 'usuario_id' => OfertaFlexibleUserFactory::new(), 'tipo' => 'M'];
+        return [
+            'campania_id' => Campania::factory(),
+            'usuario_id' => OfertaFlexibleUserFactory::new(),
+            'tipo' => 'M',
+        ];
     }
 }

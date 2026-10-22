@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
 
 class CampaniaEnlaceController extends Controller
 {
-    public function __construct(protected CampaniaUsuarioService $service) {}
+    public function __construct(protected CampaniaUsuarioService $service)
+    {
+    }
 
     public function store(StoreCampaniaEnlaceRequest $request, Campania $campania): RedirectResponse
     {

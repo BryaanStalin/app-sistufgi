@@ -12,6 +12,12 @@ class PacienteMockFactory extends Factory
 
     public function definition(): array
     {
-        return ['dni' => fake()->unique()->numerify('########'), 'tipo_doc' => 'DNI', 'nombres_apellidos' => fake()->name(), 'fecha_nacimiento' => '1980-01-01', 'sexo' => 'F'];
+        return [
+            'dni' => fake()->unique()->numerify('########'),
+            'tipo_doc' => 'DNI',
+            'nombres_apellidos' => fake()->name(),
+            'fecha_nacimiento' => '1980-01-01',
+            'sexo' => 'F',
+        ];
     }
 }

@@ -10,7 +10,13 @@ class HojaRutaDetalle extends OfertaFlexibleModel
 
     protected $fillable = ['hoja_ruta_id', 'campania_servicio_id', 'created_by', 'updated_by', 'deleted_by'];
 
-    protected $casts = ['hoja_ruta_id' => 'integer', 'campania_servicio_id' => 'integer', 'created_by' => 'integer', 'updated_by' => 'integer', 'deleted_by' => 'integer'];
+    protected $casts = [
+        'hoja_ruta_id' => 'integer',
+        'campania_servicio_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+        'deleted_by' => 'integer',
+    ];
 
     public function hoja(): BelongsTo
     {

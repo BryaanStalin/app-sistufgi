@@ -13,23 +13,45 @@ use Illuminate\Http\Request;
 
 class ServicioUpsController extends Controller
 {
-    public function __construct(protected ServicioUpsService $service) {}
+    public function __construct(protected ServicioUpsService $service)
+    {
+    }
 
     public function index(Request $request): View
     {
-        $filters = $request->validate(['q' => 'nullable|string|max:255', 'tipo' => 'nullable|in:P,E', 'activo' => 'nullable|in:0,1']);
-        $servicios = ServicioUps::query()
-            ->when($filters['q'] ?? null, fn ($query, $q) => $query->where(function ($query) use ($q): void {
-                $query->where('DESCRIPCION_UPS', 'like', '%'.$q.'%');
-                if (ctype_digit($q)) {
-                    $query->orWhere('ID_UPS', (int) $q);
-                }
-            }))
-            ->when($filters['tipo'] ?? null, fn ($query, $tipo) => $query->where('TIPO_UPS', $tipo))
-            ->when(isset($filters['activo']) && $filters['activo'] !== null, fn ($query) => $query->where('ACTIVO', $filters['activo']))
-            ->orderBy('DESCRIPCION_UPS')->orderBy('id')->paginate(20)->withQueryString();
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:255',
+            'tipo' => 'nullable|in:P,E',
+            'activo' => 'nullable|in:0,1',
+        ]);
+        $query = ServicioUps::query()
+            ->when(
+                $filters['q'] ?? null,
+                fn ($query, $q) => $query->where(function ($query) use ($q): void {
+                    $query->where('DESCRIPCION_UPS', 'like', '%'.$q.'%');
+                    if (ctype_digit($q)) {
+                        $query->orWhere('ID_UPS', (int) $q);
+                    }
+                }),
+            )
+            ->when($filters['tipo'] ?? null, fn ($query, $tipo) => $query->where('TIPO_UPS', $tipo));
+        $conteos = (clone $query)
+            ->toBase()
+            ->selectRaw('COUNT(*) AS [todos]')
+            ->selectRaw('COUNT(CASE WHEN [ACTIVO] = 1 THEN 1 END) AS [activos]')
+            ->selectRaw('COUNT(CASE WHEN [ACTIVO] = 0 THEN 1 END) AS [inactivos]')
+            ->first();
+        $servicios = $query
+            ->when(
+                isset($filters['activo']) && $filters['activo'] !== null,
+                fn ($query) => $query->where('ACTIVO', $filters['activo']),
+            )
+            ->orderBy('DESCRIPCION_UPS')
+            ->orderBy('id')
+            ->paginate(20)
+            ->withQueryString();
 
-        return view('oferta_flexible.servicios.index', compact('servicios'));
+        return view('oferta_flexible.servicios.index', compact('servicios', 'conteos'));
     }
 
     public function create(): View
@@ -41,7 +63,9 @@ class ServicioUpsController extends Controller
     {
         $this->service->save(null, $request->validated(), $request->user()->id);
 
-        return redirect()->route('oferta-flexible.servicios.index')->with('success', 'Servicio UPSS creado correctamente.');
+        return redirect()
+            ->route('oferta-flexible.servicios.index')
+            ->with('success', 'Servicio UPSS creado correctamente.');
     }
 
     public function edit(ServicioUps $servicio): View
@@ -53,7 +77,9 @@ class ServicioUpsController extends Controller
     {
         $this->service->save($servicio, $request->validated(), $request->user()->id);
 
-        return redirect()->route('oferta-flexible.servicios.index')->with('success', 'Servicio UPSS actualizado correctamente.');
+        return redirect()
+            ->route('oferta-flexible.servicios.index')
+            ->with('success', 'Servicio UPSS actualizado correctamente.');
     }
 
     public function destroy(Request $request, ServicioUps $servicio): JsonResponse

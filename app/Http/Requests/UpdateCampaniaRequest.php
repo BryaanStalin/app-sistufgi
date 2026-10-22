@@ -2,4 +2,6 @@
 
 namespace App\Http\Requests;
 
-class UpdateCampaniaRequest extends StoreCampaniaRequest {}
+class UpdateCampaniaRequest extends StoreCampaniaRequest
+{
+}

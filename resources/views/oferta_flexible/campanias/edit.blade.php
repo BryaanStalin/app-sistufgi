@@ -2,16 +2,27 @@
 @section('title', 'Editar Campaña')
 @section('script', 'oferta_flexible/campanias/form')
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><h1 class="h4 mb-0">Editar Campaña</h1><a href="{{ route('oferta-flexible.campanias.index') }}" class="btn btn-outline-secondary">Volver</a></div>
-    @include('oferta_flexible._mensajes')
-    <div class="card shadow-sm"><div class="card-body">
-        <form method="POST" action="{{ route('oferta-flexible.campanias.update', $campania) }}" id="campania-form">
+    <div class="container-fluid oferta-admin">
+        @include('oferta_flexible.partials.encabezado', [
+            'icono' => 'bi-calendar2-week',
+            'titulo' => 'Editar Campaña',
+            'subtitulo' => 'Complete los datos y revise la configuración antes de guardar.',
+            'accionUrl' => route('oferta-flexible.campanias.index'),
+            'accionTexto' => 'Volver',
+            'accionIcono' => 'bi-arrow-left',
+        ])
+        @include('oferta_flexible._mensajes')
+        <form
+            method="POST"
+            action="{{ route('oferta-flexible.campanias.update', $campania) }}"
+            id="campania-form"
+            data-admin-submit
+        >
             @csrf
             @method('PUT')
             @include('oferta_flexible.campanias._form')
-            <div class="d-flex justify-content-end mt-4"><button type="submit" class="btn btn-primary" data-save-campania disabled>Actualizar campaña</button></div>
+
+            @include('oferta_flexible.partials.resumen_campania', ['textoGuardar' => 'Actualizar campaña'])
         </form>
-    </div></div>
-</div>
+    </div>
 @endsection

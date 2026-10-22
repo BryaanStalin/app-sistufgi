@@ -13,6 +13,11 @@ class HojaRutaImpresionFactory extends Factory
 
     public function definition(): array
     {
-        return ['hoja_ruta_id' => HojaRuta::factory(), 'impreso_por' => OfertaFlexibleUserFactory::new(), 'impreso_at' => now(), 'created_at' => now()];
+        return [
+            'hoja_ruta_id' => HojaRuta::factory(),
+            'impreso_por' => OfertaFlexibleUserFactory::new(),
+            'impreso_at' => now(),
+            'created_at' => now(),
+        ];
     }
 }

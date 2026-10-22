@@ -9,18 +9,24 @@ class AdmisionHojaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return OfertaFlexibleAccess::hasRole($this->user(), 'Admisión');
+        return OfertaFlexibleAccess::puedeConsultarPacientes($this->user());
     }
 
     public function rules(): array
     {
-        return ['campania_id' => ['required', 'integer', 'min:1'], 'hoja_id' => ['required', 'integer', 'min:1']];
+        return [
+            'campania_id' => ['required', 'integer', 'min:1'],
+            'hoja_id' => ['required', 'integer', 'min:1'],
+        ];
     }
 
     public function messages(): array
     {
-        return ['required' => 'El campo :attribute es obligatorio.', 'integer' => 'El campo :attribute no es válido.',
-            'min' => 'El campo :attribute no es válido.'];
+        return [
+            'required' => 'El campo :attribute es obligatorio.',
+            'integer' => 'El campo :attribute no es válido.',
+            'min' => 'El campo :attribute no es válido.',
+        ];
     }
 
     public function attributes(): array

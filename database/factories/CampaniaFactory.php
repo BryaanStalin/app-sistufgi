@@ -12,6 +12,13 @@ class CampaniaFactory extends Factory
 
     public function definition(): array
     {
-        return ['nombre' => fake()->sentence(3), 'fecha_inicio' => today(), 'fecha_fin' => today(), 'asociar_triaje_admision' => true, 'mismos_servicios' => true, 'cerrada' => false];
+        return [
+            'nombre' => fake()->sentence(3),
+            'fecha_inicio' => today(),
+            'fecha_fin' => today(),
+            'asociar_triaje_admision' => true,
+            'mismos_servicios' => true,
+            'cerrada' => false,
+        ];
     }
 }

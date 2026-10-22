@@ -13,14 +13,21 @@ use Illuminate\Support\Facades\Schema;
 
 function ofertaFlexibleFixtures(): void
 {
-    if (app()->configurationIsCached() || ! app()->environment('testing')
-        || config('database.default') !== 'sqlite'
-        || config('database.connections.sqlite.database') !== ':memory:'
-        || ! empty(config('database.connections.sqlite.url'))) {
+    if (
+        app()->configurationIsCached() ||
+        ! app()->environment('testing') ||
+        config('database.default') !== 'sqlite' ||
+        config('database.connections.sqlite.database') !== ':memory:' ||
+        ! empty(config('database.connections.sqlite.url'))
+    ) {
         throw new LogicException('Oferta Flexible exige SQLite :memory: sin caché. No se permite otra base.');
     }
-    config(['database.connections' => ['sqlite' => config('database.connections.sqlite')],
-        'app.key' => 'base64:'.base64_encode(str_repeat('a', 32)), 'session.driver' => 'array', 'cache.default' => 'array']);
+    config([
+        'database.connections' => ['sqlite' => config('database.connections.sqlite')],
+        'app.key' => 'base64:'.base64_encode(str_repeat('a', 32)),
+        'session.driver' => 'array',
+        'cache.default' => 'array',
+    ]);
     test()->withoutVite();
     test()->travelTo(Carbon::parse('2026-10-20 12:00:00', 'America/Lima'));
     app()->setLocale('es');
@@ -148,19 +155,32 @@ function ofertaFlexibleFixtures(): void
             }
         });
     }
-    foreach ([
-        ['TB_CAMPANIA_SERVICIOS', 'campania_id, ups_id, fecha_servicio'],
-        ['TB_CAMPANIA_USUARIOS', 'campania_id, usuario_id'],
-        ['TB_CAMPANIA_ENLACES', 'campania_id, medico_usuario_id'],
-        ['TB_HOJAS_RUTA', 'campania_id, paciente_id, fecha_atencion'],
-        ['TB_HOJA_RUTA_DETALLE', 'hoja_ruta_id, campania_servicio_id'],
-    ] as [$name, $columns]) {
-        DB::statement('CREATE UNIQUE INDEX UQ_TEST_'.$name.' ON '.$name.' ('.$columns.') WHERE deleted_at IS NULL');
+    foreach (
+        [
+            ['TB_CAMPANIA_SERVICIOS', 'campania_id, ups_id, fecha_servicio'],
+            ['TB_CAMPANIA_USUARIOS', 'campania_id, usuario_id'],
+            ['TB_CAMPANIA_ENLACES', 'campania_id, medico_usuario_id'],
+            ['TB_HOJAS_RUTA', 'campania_id, paciente_id, fecha_atencion'],
+            ['TB_HOJA_RUTA_DETALLE', 'hoja_ruta_id, campania_servicio_id'],
+        ] as [$name, $columns]
+    ) {
+        DB::statement(
+            'CREATE UNIQUE INDEX UQ_TEST_'.
+                $name.
+                ' ON '.
+                $name.
+                ' ('.
+                $columns.
+                ') WHERE deleted_at IS NULL',
+        );
     }
 }
 
-function ofertaActor(string $titulo = 'Administrador', bool $roleActive = true, bool $pivotActive = true): User
-{
+function ofertaActor(
+    string $titulo = 'Administrador',
+    bool $roleActive = true,
+    bool $pivotActive = true,
+): User {
     $actor = OfertaFlexibleUserFactory::new()->create();
     $rol = Rol::query()->firstOrCreate(['titulo' => $titulo], ['status' => $roleActive]);
     $actor->roles()->attach($rol->id, ['status' => $pivotActive]);
@@ -171,16 +191,27 @@ function ofertaActor(string $titulo = 'Administrador', bool $roleActive = true, 
 /** @return array<string, mixed> */
 function ofertaCampaniaData(int $upsId): array
 {
-    return ['nombre' => 'Campaña Pequeña de Prueba', 'fecha_inicio' => '2026-10-20', 'fecha_fin' => '2026-10-21',
-        'asociar_triaje_admision' => 1, 'mismos_servicios' => 1,
-        'servicios_generales' => [['ups_id' => $upsId, 'cupos' => 10]]];
+    return [
+        'nombre' => 'Campaña Pequeña de Prueba',
+        'fecha_inicio' => '2026-10-20',
+        'fecha_fin' => '2026-10-21',
+        'asociar_triaje_admision' => 1,
+        'mismos_servicios' => 1,
+        'servicios_generales' => [['ups_id' => $upsId, 'cupos' => 10]],
+    ];
 }
 
 function ofertaHoja(CampaniaServicio $servicio, ?User $medico = null): HojaRuta
 {
-    $hoja = HojaRuta::factory()->create(['campania_id' => $servicio->campania_id,
-        'medico_usuario_id' => $medico?->id ?? ofertaActor('Médico Triaje')->id, 'fecha_atencion' => $servicio->fecha_servicio]);
-    HojaRutaDetalle::factory()->create(['hoja_ruta_id' => $hoja->id, 'campania_servicio_id' => $servicio->id]);
+    $hoja = HojaRuta::factory()->create([
+        'campania_id' => $servicio->campania_id,
+        'medico_usuario_id' => $medico?->id ?? ofertaActor('Médico Triaje')->id,
+        'fecha_atencion' => $servicio->fecha_servicio,
+    ]);
+    HojaRutaDetalle::factory()->create([
+        'hoja_ruta_id' => $hoja->id,
+        'campania_servicio_id' => $servicio->id,
+    ]);
 
     return $hoja;
 }

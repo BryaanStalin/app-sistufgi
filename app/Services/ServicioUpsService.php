@@ -14,10 +14,25 @@ class ServicioUpsService
     {
         return DB::transaction(function () use ($servicio, $data, $actorId): ServicioUps {
             /** El bloqueo de rango serializa la unicidad sin alterar la tabla existente. */
-            $activos = ServicioUps::query()->where('ACTIVO', 1)->lockForUpdate()->get();
-            $servicio = $servicio ? ServicioUps::query()->lockForUpdate()->findOrFail($servicio->id) : new ServicioUps;
-            if ((bool) $data['ACTIVO'] && $activos->contains(fn (ServicioUps $otro): bool => $otro->id !== $servicio->id && $otro->ID_UPS === (int) $data['ID_UPS'])) {
-                throw ValidationException::withMessages(['ID_UPS' => 'El código UPSS ya existe entre los servicios activos.']);
+            $activos = ServicioUps::query()
+                ->where('ACTIVO', 1)
+                ->lockForUpdate()
+                ->get();
+            $servicio = $servicio
+                ? ServicioUps::query()
+                    ->lockForUpdate()
+                    ->findOrFail($servicio->id)
+                : new ServicioUps;
+            if (
+                (bool) $data['ACTIVO'] &&
+                $activos->contains(
+                    fn (ServicioUps $otro): bool => $otro->id !== $servicio->id &&
+                        $otro->ID_UPS === (int) $data['ID_UPS'],
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'ID_UPS' => 'El código UPSS ya existe entre los servicios activos.',
+                ]);
             }
             if ($servicio->exists && ! (bool) $data['ACTIVO']) {
                 $this->assertCanDeactivate($servicio);
@@ -35,7 +50,9 @@ class ServicioUpsService
     public function delete(ServicioUps $servicio, int $actorId): void
     {
         DB::transaction(function () use ($servicio, $actorId): void {
-            $servicio = ServicioUps::query()->lockForUpdate()->findOrFail($servicio->id);
+            $servicio = ServicioUps::query()
+                ->lockForUpdate()
+                ->findOrFail($servicio->id);
             $this->assertCanDeactivate($servicio);
             $servicio->update(['ACTIVO' => false, 'deleted_by' => $actorId, 'updated_by' => $actorId]);
         });
@@ -43,9 +60,15 @@ class ServicioUpsService
 
     private function assertCanDeactivate(ServicioUps $servicio): void
     {
-        if (CampaniaServicio::withTrashed()->where('ups_id', $servicio->id)
-            ->whereHas('detalles', fn ($query) => $query->withTrashed())->exists()) {
-            throw ValidationException::withMessages(['servicio' => 'No se puede desactivar un servicio con hojas de ruta registradas.']);
+        if (
+            CampaniaServicio::withTrashed()
+                ->where('ups_id', $servicio->id)
+                ->whereHas('detalles', fn ($query) => $query->withTrashed())
+                ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'servicio' => 'No se puede desactivar un servicio con hojas de ruta registradas.',
+            ]);
         }
     }
 }

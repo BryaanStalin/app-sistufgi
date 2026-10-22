@@ -12,7 +12,12 @@ class OfertaFlexibleUserFactory extends Factory
 
     public function definition(): array
     {
-        return ['nombre' => fake()->name(), 'user' => fake()->unique()->userName(),
-            'email' => fake()->unique()->safeEmail(), 'password' => 'AcceptedPass1', 'status' => 1];
+        return [
+            'nombre' => fake()->name(),
+            'user' => fake()->unique()->userName(),
+            'email' => fake()->unique()->safeEmail(),
+            'password' => 'AcceptedPass1',
+            'status' => 1,
+        ];
     }
 }

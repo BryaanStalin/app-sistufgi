@@ -10,7 +10,13 @@ class CampaniaUsuario extends OfertaFlexibleModel
 
     protected $fillable = ['campania_id', 'usuario_id', 'tipo', 'created_by', 'updated_by', 'deleted_by'];
 
-    protected $casts = ['campania_id' => 'integer', 'usuario_id' => 'integer', 'created_by' => 'integer', 'updated_by' => 'integer', 'deleted_by' => 'integer'];
+    protected $casts = [
+        'campania_id' => 'integer',
+        'usuario_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
+        'deleted_by' => 'integer',
+    ];
 
     public function campania(): BelongsTo
     {

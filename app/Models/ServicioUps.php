@@ -14,7 +14,15 @@ class ServicioUps extends Model
 
     protected $dateFormat = 'Y-m-d H:i:s';
 
-    protected $fillable = ['ID_UPS', 'DESCRIPCION_UPS', 'TIPO_UPS', 'ACTIVO', 'created_by', 'updated_by', 'deleted_by'];
+    protected $fillable = [
+        'ID_UPS',
+        'DESCRIPCION_UPS',
+        'TIPO_UPS',
+        'ACTIVO',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
 
     protected $casts = ['ACTIVO' => 'boolean', 'ID_UPS' => 'integer'];
 

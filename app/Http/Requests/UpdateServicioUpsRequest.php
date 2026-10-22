@@ -2,4 +2,6 @@
 
 namespace App\Http\Requests;
 
-class UpdateServicioUpsRequest extends StoreServicioUpsRequest {}
+class UpdateServicioUpsRequest extends StoreServicioUpsRequest
+{
+}
