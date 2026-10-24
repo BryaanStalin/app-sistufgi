@@ -18,6 +18,12 @@ class HojaRutaPdfService
 
     public function generar(HojaRuta $hoja, CarbonInterface $emitidoAt): string
     {
+        $hoja->loadMissing('detalles.campaniaServicio.servicioUps');
+        $hoja->setRelation('detalles', $hoja->detalles->filter(
+            fn ($detalle): bool => in_array(
+                $detalle->campaniaServicio?->servicioUps?->TIPO_UPS, ['P', 'E'], true,
+            ),
+        )->values());
         $filas = max(1, (int) ceil($hoja->detalles->count() / 2));
         $alto = min(56, max(28.35, 470 / $filas - 7));
 
@@ -42,7 +48,9 @@ class HojaRutaPdfService
                 ]);
             $contenido = $pdf->output();
 
-            if ($pdf->getDomPDF()->getCanvas()->get_page_count() === 1) {
+            if ($pdf->getDomPDF()
+                ->getCanvas()
+                ->get_page_count() === 1) {
                 return $contenido;
             }
 

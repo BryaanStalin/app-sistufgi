@@ -57,7 +57,7 @@ function hojaRutaPdfEjemplo(int $cantidad, bool $nombresLargos = false): HojaRut
         if ($nombresLargos) {
             $nombre .= ' - Evaluación especializada, orientación y seguimiento integral del paciente';
         }
-        $servicio = new ServicioUps(['DESCRIPCION_UPS' => $nombre]);
+        $servicio = new ServicioUps(['DESCRIPCION_UPS' => $nombre, 'TIPO_UPS' => 'E']);
         $campaniaServicio = new CampaniaServicio;
         $campaniaServicio->setRelation('servicioUps', $servicio);
         $detalle = new HojaRutaDetalle;
@@ -113,4 +113,12 @@ test('route PDF leaves the unmatched second half borderless and preserves vital 
     expect($xpath->query('//td[@class="mitad-vacia" and @colspan="2"]'))->toHaveCount(1);
     expect($xpath->query('//table[@class="signos"]/tr/td'))->toHaveCount(6);
     expect($html)->toContain('PESO:', 'TALLA:', 'PA:', 'Sat O2:', 'T°:', 'C°', 'GLUCOSA', 'María Muñoz Peña');
+});
+
+test('route PDF excludes laboratory exams before measuring its single page capacity', function (): void {
+    $hoja = hojaRutaPdfEjemplo(23);
+    $hoja->detalles->first()->campaniaServicio->servicioUps->TIPO_UPS = 'L';
+    $contenido = app(HojaRutaPdfService::class)->generar($hoja, now());
+    expect(preg_match_all('~/Type\s*/Page\b~', $contenido))->toBe(1);
+    expect($hoja->detalles)->toHaveCount(22);
 });

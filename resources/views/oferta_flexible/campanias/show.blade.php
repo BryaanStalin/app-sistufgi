@@ -129,5 +129,31 @@
                 </div>
             </div>
         </div>
+        @if ($campania->incluye_laboratorio)
+            <div
+                class="card mt-4"
+                data-laboratorio-stock
+                data-stock-url="{{ route('oferta-flexible.laboratorio.stock', $campania) }}"
+                data-stock-interval="{{ config('oferta_flexible.laboratorio.stock_intervalo_segundos') }}"
+            >
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h2 class="h6 mb-0">Exámenes de laboratorio e insumos</h2>
+                    <button type="button" class="btn btn-primary" data-stock-refresh>
+                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                        Actualizar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="small text-body-secondary">
+                        Registrados: pendientes y realizados que consumen insumos.
+                        <span data-stock-updated aria-live="polite"></span>
+                    </p>
+                    <div class="alert alert-danger" data-stock-error role="alert" hidden></div>
+                    <div data-stock-content>
+                        @include('oferta_flexible.partials.laboratorio_stock')
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 @endsection

@@ -63,6 +63,12 @@
                     'Cada médico se enlaza a un admisionista que atenderá sus hojas de ruta.',
                 ],
                 [
+                    'incluye_laboratorio',
+                    'Incluye Laboratorio',
+                    false,
+                    'Configure exámenes e insumos por fecha y asigne un equipo propio de laboratorio.',
+                ],
+                [
                     'mismos_servicios',
                     'Mismos servicios todos los días',
                     true,
@@ -71,9 +77,11 @@
             ] as [$campo, $texto, $predeterminado, $ayuda])
                 @php
                     $valor = (string) old($campo, (int) ($campania->{$campo} ?? $predeterminado));
-                    $ayudaNo = $campo === 'asociar_triaje_admision'
+                    $ayudaNo = $campo === 'incluye_laboratorio'
+                        ? 'La campaña solo ofrecerá servicios de triaje.'
+                        : ($campo === 'asociar_triaje_admision'
                         ? 'Admisión consultará las hojas de todos los médicos de la campaña.'
-                        : 'Configure servicios y cupos independientes para cada fecha.';
+                        : 'Configure servicios y cupos independientes para cada fecha.');
                 @endphp
                 <div class="col-lg-6">
                     <p class="form-label" id="{{ $campo }}-label">{{ $texto }}</p>
@@ -116,96 +124,24 @@
         </div>
     </div>
 </div>
-<div
-    class="card"
-    id="servicios-editor"
-    data-generales="{{ json_encode(old('servicios_generales', $generales)) }}"
-    data-diarios="{{ json_encode(old('servicios_dia', $diarios)) }}"
-    data-personalizados="{{ json_encode($personalizados) }}"
->
-    <div class="card-header">
-        <h2 class="h6 mb-0">Servicios y cupos</h2>
-    </div>
-    <div class="card-body">
-        <p class="text-body-secondary small">
-            Seleccione al menos un servicio por día y asigne un cupo entero mayor que cero.
-        </p>
-        <div
-            id="servicios-dias-tabs"
-            class="nav nav-tabs oferta-tabs mb-3"
-            role="tablist"
-            aria-label="Días de campaña"
-        >
-        </div>
-        <div class="row g-3 mb-3">
-            <div class="col-md-8">
-                <label for="servicio-buscar" class="form-label">Buscar servicios</label>
-                <input
-                    id="servicio-buscar"
-                    type="search"
-                    class="form-control"
-                    placeholder="Descripción o código UPSS"
-                    autocomplete="off"
-                >
-            </div>
-            <div class="col-md-4">
-                <label for="servicio-tipo" class="form-label">Tipo de servicio</label>
-                <select id="servicio-tipo" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="P">Preventivo</option>
-                    <option value="E">Especialidad</option>
-                </select>
-            </div>
-        </div>
-        <div class="oferta-service-catalog mb-3" data-service-catalog>
-            @foreach ($servicios as $servicio)
-                <label
-                    class="oferta-catalog-item"
-                    data-catalog-item
-                    data-ups-id="{{ $servicio->id }}"
-                    data-tipo="{{ $servicio->TIPO_UPS }}"
-                    data-activo="{{ (int) $servicio->ACTIVO }}"
-                    data-descripcion="{{ $servicio->DESCRIPCION_UPS }}"
-                    data-codigo="{{ $servicio->ID_UPS }}"
-                >
-                    <input
-                        type="checkbox"
-                        class="form-check-input mt-0"
-                        data-catalog-check
-                        value="{{ $servicio->id }}"
-                    >
-                    <span>
-                        <span class="fw-semibold d-block">{{ $servicio->DESCRIPCION_UPS }}</span>
-                        <span class="small text-body-secondary">{{ $servicio->ID_UPS }}</span>
-                        @include('oferta_flexible.partials.badge', ['etiqueta' => $servicio->tipo_etiqueta])
-                        @unless ($servicio->ACTIVO)
-                            @include('oferta_flexible.partials.badge', ['etiqueta' => 'Inactivo'])
-                        @endunless
-                    </span>
-                </label>
-            @endforeach
-        </div>
-        <p class="small text-body-secondary" data-catalog-empty hidden>No se encontraron servicios con esos filtros.
-        </p>
-        <div id="servicios-generales">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                <h3 class="h6 mb-0">Cupos generales y por día</h3>
-                <button type="button" class="btn btn-warning text-dark" data-reset-personalizados>
-                    <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                    Aplicar cupos generales a todos los días…
-                </button>
-            </div>
-            <p class="small text-body-secondary">
-                Los cupos diarios personalizados se conservan al cambiar el cupo general.
-            </p>
-            <div data-general-rows></div>
-        </div>
-        <div id="servicios-dias"></div>
-    </div>
-</div>
-<input type="hidden" name="sobrescribir_personalizados" id="sobrescribir_personalizados" value="0">
-<div id="servicios-payload"></div>
+@include('oferta_flexible.partials.editor_servicios', [
+    'prefix' => 'servicios',
+    'lab' => false,
+    'catalogo' => $servicios,
+    'datosGenerales' => $generales,
+    'datosDiarios' => $diarios,
+    'datosPersonalizados' => $personalizados,
+])
+@include('oferta_flexible.partials.editor_servicios', [
+    'prefix' => 'laboratorio',
+    'lab' => true,
+    'catalogo' => $examenes,
+    'datosGenerales' => $labGenerales,
+    'datosDiarios' => $labDiarios,
+    'datosPersonalizados' => $labPersonalizados,
+])
 <noscript>
-    <div class="alert alert-warning mt-3">Active JavaScript para configurar los servicios y cupos de la campaña.
+    <div class="alert alert-warning mt-3">
+        Active JavaScript para configurar los servicios y cupos de la campaña.
     </div>
 </noscript>

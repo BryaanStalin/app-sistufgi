@@ -17,6 +17,7 @@ class Campania extends OfertaFlexibleModel
         'fecha_fin',
         'asociar_triaje_admision',
         'mismos_servicios',
+        'incluye_laboratorio',
         'cerrada',
         'cerrada_at',
         'cerrada_by',
@@ -26,6 +27,8 @@ class Campania extends OfertaFlexibleModel
     ];
 
     protected $casts = [
+        'incluye_laboratorio' => 'boolean',
+        'lab_ultimo_tm' => 'integer',
         'cerrada_by' => 'integer',
         'created_by' => 'integer',
         'updated_by' => 'integer',
@@ -51,6 +54,16 @@ class Campania extends OfertaFlexibleModel
     public function enlaces(): HasMany
     {
         return $this->hasMany(CampaniaEnlace::class, 'campania_id');
+    }
+
+    public function labPacientes(): HasMany
+    {
+        return $this->hasMany(LabPaciente::class, 'campania_id');
+    }
+
+    public function labAtenciones(): HasMany
+    {
+        return $this->hasMany(LabAtencion::class, 'campania_id');
     }
 
     public function hojas(): HasMany

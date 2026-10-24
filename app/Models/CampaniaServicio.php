@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -41,6 +43,23 @@ class CampaniaServicio extends OfertaFlexibleModel
     public function servicioUps(): BelongsTo
     {
         return $this->belongsTo(ServicioUps::class, 'ups_id');
+    }
+
+    #[Scope]
+    protected function triaje(Builder $query): void
+    {
+        $query->whereHas('servicioUps', fn (Builder $ups) => $ups->whereIn('TIPO_UPS', ['P', 'E']));
+    }
+
+    #[Scope]
+    protected function laboratorio(Builder $query): void
+    {
+        $query->whereHas('servicioUps', fn (Builder $ups) => $ups->where('TIPO_UPS', 'L'));
+    }
+
+    public function examenes(): HasMany
+    {
+        return $this->hasMany(LabAtencionExamen::class, 'campania_servicio_id');
     }
 
     public function detalles(): HasMany

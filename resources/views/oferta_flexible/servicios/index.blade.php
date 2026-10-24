@@ -6,7 +6,7 @@
         @include('oferta_flexible.partials.encabezado', [
             'icono' => 'bi-hospital',
             'titulo' => 'Gestión de Servicios UPSS',
-            'subtitulo' => 'Administre el catálogo de servicios preventivos y de especialidad.',
+            'subtitulo' => 'Administre el catálogo de servicios de triaje y exámenes de laboratorio.',
             'accionUrl' => route('oferta-flexible.servicios.create'),
             'accionTexto' => 'Nuevo servicio UPSS',
         ])
@@ -28,7 +28,7 @@
                     <div class="col-md-4">
                         <label for="tipo" class="form-label">Tipo</label>
                         <select id="tipo" name="tipo" class="form-select">
-                            <option value="">Todos</option>
+                            <option value="">Triaje: Preventivo y Especialidad</option>
                             @foreach (\App\Models\ServicioUps::TIPOS as $value => $label)
                                 <option value="{{ $value }}" @selected(request('tipo') === $value)>
                                     {{ $label }}

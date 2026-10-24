@@ -2,6 +2,7 @@
     $variante = match ($etiqueta) {
         'Activa', 'Activo', 'Asignado', 'SÍ', 'Impresa' => 'success',
         'Pendiente' => 'warning',
+        'Laboratorio (examen)' => 'orange',
         'Modificada' => 'orange',
         'Cerrada' => 'danger',
         'Preventivo', 'PREVENTIVO' => 'primary',

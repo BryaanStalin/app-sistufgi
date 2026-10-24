@@ -7,6 +7,10 @@ use App\Http\Controllers\CampaniaController;
 use App\Http\Controllers\CampaniaEnlaceController;
 use App\Http\Controllers\CampaniaUsuarioController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LaboratorioAdmisionController;
+use App\Http\Controllers\LaboratorioAsignacionController;
+use App\Http\Controllers\LaboratorioStockController;
+use App\Http\Controllers\LaboratorioTomaMuestraController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\ServicioUpsController;
@@ -14,6 +18,8 @@ use App\Http\Controllers\TriajeController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Middleware\EnsureOfertaFlexibleAdministrator;
 use App\Http\Middleware\EnsureOfertaFlexibleAdmision;
+use App\Http\Middleware\EnsureOfertaFlexibleAdmisionLaboratorio;
+use App\Http\Middleware\EnsureOfertaFlexibleLaboratorio;
 use App\Http\Middleware\EnsureOfertaFlexibleTriaje;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +46,29 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/welcome', [DashboardController::class, 'welcome'])->name('welcome');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
+    Route::prefix('oferta-flexible/laboratorio')
+        ->name('oferta-flexible.laboratorio.')
+        ->middleware([EnsureOfertaFlexibleLaboratorio::class, 'menu.access'])
+        ->group(function (): void {
+            Route::get('asignar', [LaboratorioAsignacionController::class, 'index'])->name('asignar.index');
+            Route::post('asignar', [LaboratorioAsignacionController::class, 'store'])->name('asignar.store');
+            Route::get('toma-muestra', [LaboratorioTomaMuestraController::class, 'index'])
+                ->name('toma-muestra.index');
+            Route::post('toma-muestra', [LaboratorioTomaMuestraController::class, 'store'])
+                ->name('toma-muestra.store');
+        });
+    Route::prefix('oferta-flexible/laboratorio')
+        ->name('oferta-flexible.laboratorio.')
+        ->middleware([EnsureOfertaFlexibleAdmisionLaboratorio::class, 'menu.access'])
+        ->group(function (): void {
+            Route::get('admision', [LaboratorioAdmisionController::class, 'index'])->name('admision.index');
+            Route::delete('admision', [LaboratorioAdmisionController::class, 'destroy'])
+                ->name('admision.destroy');
+            Route::post('admision', [LaboratorioAdmisionController::class, 'store'])
+                ->middleware('throttle:oferta-flexible-dni')
+                ->name('admision.store');
+        });
 
     Route::middleware('menu.access')->group(function () {
         Route::prefix('oferta-flexible')
@@ -76,6 +105,8 @@ Route::middleware('auth')->group(function () {
                 Route::post('campanias/{campania}/reabrir', [CampaniaController::class, 'reabrir'])->name(
                     'campanias.reabrir',
                 );
+                Route::get('campanias/{campania}/laboratorio/stock', LaboratorioStockController::class)
+                    ->name('laboratorio.stock');
                 Route::get('usuarios-campanias', [CampaniaUsuarioController::class, 'index'])->name(
                     'usuarios.index',
                 );

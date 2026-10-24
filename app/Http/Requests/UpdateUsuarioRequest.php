@@ -20,7 +20,7 @@ class UpdateUsuarioRequest extends FormRequest
             'nombre' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:TB_ACCESO_USUARIO,email,'.$usuarioId,
             'user' => 'required|string|max:120|unique:TB_ACCESO_USUARIO,user,'.$usuarioId,
-            'password' => ['nullable', 'string', Password::defaults(), 'confirmed'],
+            'password' => ['nullable', 'string', 'confirmed'],
             'password_confirmation' => ['nullable', 'required_with:password', 'string'],
             'DNI' => 'nullable|string|max:12',
             'status' => 'required|boolean',

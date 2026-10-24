@@ -8,6 +8,7 @@ use App\Models\HojaRuta;
 use App\Models\HojaRutaDetalle;
 use App\Models\HojaRutaImpresion;
 use App\Models\Menu;
+use App\Models\ServicioUps;
 use App\Models\User;
 use App\Services\AdmisionService;
 use App\Services\CampaniaService;
@@ -222,7 +223,9 @@ test('admission name search matches every word across names and surnames in any 
     $documento = new DOMDocument;
     @$documento->loadHTML('<?xml encoding="UTF-8">'.$response->json('html'));
     $xpath = new DOMXPath($documento);
-    expect(trim($xpath->query('//*[@data-resumen="total"]')->item(0)->textContent))
+    expect(trim($xpath->query('//*[@data-resumen="total"]')
+        ->item(0)
+        ->textContent))
         ->toBe($encontrado ? '1' : '0');
 
     if ($encontrado) {
@@ -278,7 +281,9 @@ test('admission refuses inactive user role or pivot', function (string $inactive
             ->roles()
             ->updateExistingPivot($usuario->roles->first()->id, ['status' => false]),
     };
-    expect(fn () => app(AdmisionService::class)->imprimir($usuario, 1, 1))->toThrow(HttpException::class);
+    expect(fn () => app(AdmisionService::class)
+        ->imprimir($usuario, 1, 1))
+        ->toThrow(HttpException::class);
     $this
         ->actingAs($usuario)
         ->get(route('oferta-flexible.admision.index'))
@@ -464,9 +469,12 @@ test('sheet summaries cover all filtered pages and preserve each role scope', fu
     @$document->loadHTML('<?xml encoding="UTF-8">'.$ajax->json('html'));
     $xpath = new DOMXPath($document);
     foreach (['total' => 18, 'impresas' => 10, 'pendientes' => 8, 'modificadas' => 3] as $key => $count) {
-        expect(trim($xpath->query('//*[@data-resumen="'.$key.'"]')->item(0)->textContent))->toBe(
-            (string) $count,
-        );
+        expect(trim($xpath->query('//*[@data-resumen="'.$key.'"]')
+            ->item(0)
+            ->textContent))
+            ->toBe(
+                (string) $count,
+            );
     }
     unset($filters['medico_id']);
     $all = $this->get(route('oferta-flexible.admision.index', $filters))->assertOk();
@@ -530,8 +538,12 @@ test('foreign sheet ids cannot be printed or deleted', function (string $scope):
     $data = ['campania_id' => $campania->id, 'hoja_id' => $hoja->id];
     match ($scope) {
         'medico' => ($data['hoja_id'] = ofertaHoja($servicio)->id),
-        'campania' => ($data['hoja_id'] = ofertaHoja(CampaniaServicio::factory()->create())->id),
-        'campania_ajena' => ($data['campania_id'] = Campania::factory()->create()->id),
+        'campania' => ($data['hoja_id'] = ofertaHoja(CampaniaServicio::factory()
+            ->create())
+            ->id),
+        'campania_ajena' => ($data['campania_id'] = Campania::factory()
+            ->create()
+            ->id),
         'sin_asignacion' => CampaniaUsuario::where('usuario_id', $usuario->id)
             ->firstOrFail()
             ->delete(),
@@ -603,7 +615,9 @@ test('each generated PDF appends an audited impression even when the campaign is
     ]);
     $this->post(route('oferta-flexible.admision.imprimir'), $data)->assertStatus(303);
     $this->assertDatabaseCount('TB_HOJA_RUTA_IMPRESIONES', 2);
-    expect($hoja->refresh()->updated_at->toDateTimeString())->toBe($updatedAt);
+    expect($hoja->refresh()
+        ->updated_at->toDateTimeString())
+        ->toBe($updatedAt);
     $list = $this->get(route('oferta-flexible.admision.index'))->assertOk();
     expect(preg_match('/\bModificada\b/u', strip_tags($list->getContent())))->toBe(0);
     if ($closed) {
@@ -669,8 +683,12 @@ test(
             'hoja_ruta_id' => $hoja->id,
             'deleted_by' => $usuario->id,
         ]);
-        expect(HojaRutaDetalle::where('hoja_ruta_id', $hoja->id)->count())->toBe(0);
-        expect(app(CampaniaService::class)->usage([$servicio->id]))->toBe([]);
+        expect(HojaRutaDetalle::where('hoja_ruta_id', $hoja->id)
+            ->count())
+            ->toBe(0);
+        expect(app(CampaniaService::class)
+            ->usage([$servicio->id]))
+            ->toBe([]);
         $this->assertDatabaseHas('TB_PACIENTES_MOCK', ['id' => $hoja->paciente_id]);
         $this->assertDatabaseHas('TB_HOJA_RUTA_IMPRESIONES', ['id' => $impresion->id]);
         $this->actingAs($medico);
@@ -701,7 +719,9 @@ test('closed campaigns cannot lose sheets or quota through admission', function 
         ->assertUnprocessable()
         ->assertJsonValidationErrors('campania');
     $this->assertNotSoftDeleted($hoja);
-    expect(app(CampaniaService::class)->usage([$servicio->id]))->toBe([$servicio->id => 1]);
+    expect(app(CampaniaService::class)
+        ->usage([$servicio->id]))
+        ->toBe([$servicio->id => 1]);
 });
 
 test(
@@ -742,7 +762,9 @@ test(
         ])->assertStatus(303);
         $list = $this->get(route('oferta-flexible.admision.index'))->assertOk();
         expect(preg_match('/\bModificada\b/u', strip_tags($list->getContent())))->toBe(0);
-        expect($hoja->refresh()->medico_usuario_id)->toBe($medico->id);
+        expect($hoja->refresh()
+            ->medico_usuario_id)
+            ->toBe($medico->id);
     },
 );
 
@@ -771,7 +793,9 @@ test('patient doctor campaign and service names are escaped in list and PDF temp
         'emitidoAt' => now(),
         'edad' => 40,
     ])->render();
-    expect($html)->toContain('&lt;script&gt;')->not->toContain($payload);
+    expect($html)
+        ->toContain('&lt;script&gt;')
+        ->not->toContain($payload);
 });
 
 test('administrator sees every sheet creator without assignments or links', function (
@@ -931,7 +955,9 @@ test('administrator prints and deletes unlinked sheets with its own audit identi
         'deleted_by' => $administrador->id,
     ]);
     $this->assertDatabaseHas('TB_HOJA_RUTA_IMPRESIONES', ['hoja_ruta_id' => $hoja->id]);
-    expect(app(CampaniaService::class)->usage([$servicio->id]))->toBe([]);
+    expect(app(CampaniaService::class)
+        ->usage([$servicio->id]))
+        ->toBe([]);
 });
 
 test('administrator can reprint after campaign closure but cannot delete the sheet', function (): void {
@@ -954,7 +980,9 @@ test('administrator can reprint after campaign closure but cannot delete the she
         'hoja_ruta_id' => $hoja->id,
         'impreso_por' => $administrador->id,
     ]);
-    expect(app(CampaniaService::class)->usage([$servicio->id]))->toBe([$servicio->id => 1]);
+    expect(app(CampaniaService::class)
+        ->usage([$servicio->id]))
+        ->toBe([$servicio->id => 1]);
 });
 
 test('administrator cannot operate on mismatched deleted or finished campaign sheets', function (
@@ -964,7 +992,9 @@ test('administrator cannot operate on mismatched deleted or finished campaign sh
     $administrador = admisionActor('Administrador');
     $data = ['campania_id' => $campania->id, 'hoja_id' => $hoja->id];
     match ($scope) {
-        'otra_campania' => ($data['hoja_id'] = ofertaHoja(CampaniaServicio::factory()->create())->id),
+        'otra_campania' => ($data['hoja_id'] = ofertaHoja(CampaniaServicio::factory()
+            ->create())
+            ->id),
         'campania_eliminada' => $campania->delete(),
         'hoja_eliminada' => $hoja->delete(),
         'finalizada' => $campania->update(['fecha_inicio' => '2026-10-18', 'fecha_fin' => '2026-10-19']),
@@ -1014,3 +1044,16 @@ test(
             ->assertSee('Médicos enlazados:');
     },
 );
+
+test('admission service badges exclude laboratory even if a foreign detail was inserted', function (): void {
+    ['usuario' => $user, 'campania' => $campaign, 'hoja' => $sheet] = admisionEscenario();
+    $lab = CampaniaServicio::factory()->create([
+        'campania_id' => $campaign->id,
+        'ups_id' => ServicioUps::factory()->state([
+            'TIPO_UPS' => 'L', 'DESCRIPCION_UPS' => 'Examen solo de laboratorio',
+        ]),
+    ]);
+    HojaRutaDetalle::factory()->create(['hoja_ruta_id' => $sheet->id, 'campania_servicio_id' => $lab->id]);
+    $this->actingAs($user)->get(route('oferta-flexible.admision.index', ['campania_id' => $campaign->id]))
+        ->assertOk()->assertDontSee('Examen solo de laboratorio');
+});

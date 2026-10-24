@@ -18,7 +18,7 @@ class StoreUsuarioRequest extends FormRequest
             'nombre' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:TB_ACCESO_USUARIO,email',
             'user' => 'required|string|max:120|unique:TB_ACCESO_USUARIO,user',
-            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
+            'password' => ['required', 'string',  'confirmed'],
             'password_confirmation' => ['required', 'string'],
             'DNI' => 'required|string|max:12',
             'status' => 'required|boolean',

@@ -1,0 +1,59 @@
+.oferta-admin .lab-asignacion-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.oferta-admin .lab-asignacion-table :is(th, td) {
+    padding: 0.55rem 0.3rem;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.oferta-admin .lab-asignacion-table th {
+    background-color: #f1f5fa;
+    color: #34455c;
+}
+
+.lab-asignacion-table .lab-col-seleccion {
+    width: 3%;
+}
+
+.lab-asignacion-table .lab-col-numero {
+    width: 3%;
+}
+
+.lab-asignacion-table .lab-col-codigo {
+    width: 6%;
+}
+
+.lab-asignacion-table .lab-col-documento {
+    width: 10%;
+}
+
+.lab-asignacion-table .lab-col-paciente {
+    width: 14%;
+}
+
+.lab-asignacion-table .lab-col-celular {
+    width: 9%;
+}
+
+.lab-asignacion-table .lab-col-destino {
+    width: 16%;
+}
+
+.oferta-admin .lab-asignacion-table .lab-destino {
+    width: 100%;
+    min-width: 0;
+    padding: 0.4rem 1.4rem 0.4rem 0.3rem;
+    font-size: 0.75rem;
+    background-position: right 0.3rem center;
+}
+
+@media (max-width: 991.98px) {
+    .oferta-admin .lab-asignacion-table :is(th, td) {
+        padding: 0.4rem 0.2rem;
+    }
+}

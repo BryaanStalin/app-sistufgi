@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\CampaniaServicio;
+use App\Models\LabAtencion;
+use App\Models\LabAtencionExamen;
 use App\Models\ServicioUps;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -37,6 +39,22 @@ class ServicioUpsService
             if ($servicio->exists && ! (bool) $data['ACTIVO']) {
                 $this->assertCanDeactivate($servicio);
             }
+            if (
+                $servicio->exists &&
+                ($servicio->TIPO_UPS === 'L') !== ($data['TIPO_UPS'] === 'L') &&
+                ($servicio->campaniaServicios()
+                    ->withTrashed()
+                    ->exists() ||
+                    LabAtencion::withTrashed()
+                        ->where('ups_id_solicita', $servicio->id)
+                        ->exists())
+            ) {
+                throw ValidationException::withMessages([
+                    'TIPO_UPS' => 'No se puede cambiar entre triaje y laboratorio un servicio usado en campañas.',
+                ]);
+            }
+            $data['HORA_LIMITE'] = $data['TIPO_UPS'] === 'L' ? ($data['HORA_LIMITE'] ?? null) : null;
+            $data['ENVIA_EESS'] = $data['TIPO_UPS'] === 'L' ? (bool) ($data['ENVIA_EESS'] ?? true) : true;
             $servicio->fill($data);
             $servicio->created_by ??= $actorId;
             $servicio->updated_by = $actorId;
@@ -64,10 +82,16 @@ class ServicioUpsService
             CampaniaServicio::withTrashed()
                 ->where('ups_id', $servicio->id)
                 ->whereHas('detalles', fn ($query) => $query->withTrashed())
+                ->exists() ||
+            LabAtencionExamen::withTrashed()
+                ->where('ups_id', $servicio->id)
+                ->exists() ||
+            LabAtencion::withTrashed()
+                ->where('ups_id_solicita', $servicio->id)
                 ->exists()
         ) {
             throw ValidationException::withMessages([
-                'servicio' => 'No se puede desactivar un servicio con hojas de ruta registradas.',
+                'servicio' => 'No se puede desactivar un servicio con hojas de ruta o registros de laboratorio.',
             ]);
         }
     }

@@ -136,6 +136,7 @@ class TriajeService
         $filas = CampaniaServicio::query()
             ->where('campania_id', $campania->id)
             ->where('fecha_servicio', $hoy)
+            ->triaje()
             ->whereIn('id', $afectados)
             ->orderBy('id')
             ->lockForUpdate()
@@ -208,12 +209,15 @@ class TriajeService
                 ->hojas()
                 ->where('paciente_id', $paciente['id'])
                 ->where('fecha_atencion', $hoy)
-                ->with('detalles')
+                ->with(['detalles' => fn ($query) => $query->whereHas(
+                    'campaniaServicio', fn ($servicio) => $servicio->triaje(),
+                )])
                 ->first()
             : null;
         $seleccionados = $hoja?->detalles->pluck('campania_servicio_id')->all() ?? [];
         $filas = $campania
             ->servicios()
+            ->triaje()
             ->where('fecha_servicio', $hoy)
             ->whereHas('servicioUps', fn ($query) => $query->where('ACTIVO', true))
             ->with('servicioUps')

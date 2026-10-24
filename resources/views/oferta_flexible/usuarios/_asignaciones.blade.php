@@ -1,8 +1,15 @@
-<div class="row g-4">
-    @foreach ([
+@php
+    $paneles = [
         ['M', 'Médicos Triaje', $medicos, 'bi-heart-pulse'],
         ['A', 'Admisión', $admisiones, 'bi-person-vcard'],
-    ] as [$tipoUsuario, $tituloRol, $usuariosRol, $iconoRol])
+    ];
+    if ($campania->incluye_laboratorio) {
+        $paneles[] = ['AL', 'Admisión Laboratorio', $admisionesLab, 'bi-person-vcard'];
+        $paneles[] = ['L', 'Laboratorio', $laboratorios, 'bi-droplet'];
+    }
+@endphp
+<div class="row g-4">
+    @foreach ($paneles as [$tipoUsuario, $tituloRol, $usuariosRol, $iconoRol])
         @php
             $asignacionesRol = $campania->asignaciones->where('tipo', $tipoUsuario);
             $listaUsuarios = $usuariosRol->concat($asignacionesRol->pluck('usuario'))->unique('id');

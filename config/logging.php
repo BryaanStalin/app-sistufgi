@@ -52,6 +52,22 @@ return [
 
     'channels' => [
 
+        'laboratorio_exportaciones' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laboratorio-exportaciones.log'),
+            'level' => 'info',
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
+        'powerbi' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/powerbi.log'),
+            'level' => 'info',
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),

@@ -2,6 +2,14 @@
 
 return [
 
+    'powerbi_api' => [
+        'enabled' => (bool) env('POWERBI_API_ENABLED', false),
+        'user' => env('POWERBI_API_USER', ''),
+        'password' => env('POWERBI_API_PASSWORD', ''),
+        'key' => env('POWERBI_API_KEY', ''),
+        'require_https' => (bool) env('POWERBI_API_REQUIRE_HTTPS', true),
+    ],
+
     'dni_api' => [
         'url' => env('DNI_API_URL', env('URL_API_CONSULTA_DNI')),
         'token' => env('DNI_API_TOKEN', env('API_KEY_CONSULTA_DNI')),

@@ -326,7 +326,9 @@ test('registration only inserts and never overwrites an existing patient', funct
         ->assertOk()
         ->assertJsonPath('paciente.id', $patient->id);
     $this->assertDatabaseCount('TB_PACIENTES_MOCK', 1);
-    expect($patient->refresh()->nombre_completo)->toBe('JOSÉ MUÑOZ CÁRDENAS');
+    expect($patient->refresh()
+        ->nombre_completo)
+        ->toBe('JOSÉ MUÑOZ CÁRDENAS');
 });
 
 test('undocumented registration creates distinct internal identifiers with inserts only', function (): void {
@@ -351,7 +353,9 @@ test('undocumented registration creates distinct internal identifiers with inser
         ->postJson(route('oferta-flexible.triaje.store'), $payload)
         ->assertOk()
         ->json('paciente');
-    expect($first['dni'])->toMatch('/^SD-[A-F0-9]{24}$/')->not->toBe($second['dni']);
+    expect($first['dni'])
+        ->toMatch('/^SD-[A-F0-9]{12}$/')
+        ->not->toBe($second['dni']);
     expect($updates)->toBe([]);
     $this->assertDatabaseCount('TB_PACIENTES_MOCK', 2);
 });
@@ -386,7 +390,9 @@ test('context excludes other campaigns dates and inactive UPSS', function (): vo
     CampaniaServicio::factory()->create();
     CampaniaServicio::factory()->create([
         'campania_id' => $campania->id,
-        'ups_id' => ServicioUps::factory()->create(['ACTIVO' => false])->id,
+        'ups_id' => ServicioUps::factory()
+            ->create(['ACTIVO' => false])
+            ->id,
     ]);
 
     $this
@@ -487,10 +493,14 @@ test(
             ->assertOk()
             ->assertJsonPath('hoja.id', $sheet->id)
             ->assertJsonPath('servicios.0.disponibles', 1);
-        expect($sheet->refresh()->medico_usuario_id)->toBe($creator->id);
+        expect($sheet->refresh()
+            ->medico_usuario_id)
+            ->toBe($creator->id);
         expect($sheet->updated_by)->toBe($editor->id);
         $this->assertSoftDeleted($detail);
-        expect($detail->refresh()->deleted_by)->toBe($editor->id);
+        expect($detail->refresh()
+            ->deleted_by)
+            ->toBe($editor->id);
     },
 );
 
@@ -500,7 +510,9 @@ test('saving rejects a foreign date campaign inactive or repeated service', func
     triajeAsignar($medico, $service->campania);
     $patient = PacienteMock::factory()->create();
     $ids = match ($invalid) {
-        'other campaign' => [CampaniaServicio::factory()->create()->id],
+        'other campaign' => [CampaniaServicio::factory()
+            ->create()
+            ->id],
         'other date' => [
             CampaniaServicio::factory()->create([
                 'campania_id' => $service->campania_id,
@@ -510,7 +522,9 @@ test('saving rejects a foreign date campaign inactive or repeated service', func
         'inactive' => [
             CampaniaServicio::factory()->create([
                 'campania_id' => $service->campania_id,
-                'ups_id' => ServicioUps::factory()->create(['ACTIVO' => false])->id,
+                'ups_id' => ServicioUps::factory()
+                    ->create(['ACTIVO' => false])
+                    ->id,
             ])->id,
         ],
         'duplicate' => [$service->id, $service->id],
@@ -568,7 +582,9 @@ test(
             ->detalles()
             ->pluck('campania_servicio_id')
             ->all())->toBe([$alternative->id]);
-        expect(HojaRutaDetalle::where('campania_servicio_id', $last->id)->count())->toBe(1);
+        expect(HojaRutaDetalle::where('campania_servicio_id', $last->id)
+            ->count())
+            ->toBe(1);
         $this->assertDatabaseCount('TB_HOJAS_RUTA', 2);
     },
 );
@@ -680,7 +696,9 @@ test(
                 'triaje-servicio',
             ] as $id
         ) {
-            expect($xpath->query('//label[@for="'.$id.'"]')->length)->toBe(1);
+            expect($xpath->query('//label[@for="'.$id.'"]')
+                ->length)
+                ->toBe(1);
         }
         if ($directory = getenv('TRIAJE_PREVIEW_DIR')) {
             file_put_contents($directory.'/index.html', $response->getContent());
@@ -696,3 +714,28 @@ test(
         }
     },
 );
+
+test('triaje excludes laboratory exams and rejects forged laboratory service ids', function (): void {
+    $medico = triajeActor();
+    $campania = Campania::factory()->create(['incluye_laboratorio' => true]);
+    triajeAsignar($medico, $campania);
+    $clinical = CampaniaServicio::factory()->create(['campania_id' => $campania->id]);
+    $lab = CampaniaServicio::factory()->create([
+        'campania_id' => $campania->id,
+        'ups_id' => ServicioUps::factory()->state(['TIPO_UPS' => 'L']),
+    ]);
+    $patient = PacienteMock::factory()->create();
+    $this->actingAs($medico)->postJson(route('oferta-flexible.triaje.store'), [
+        'accion' => 'consultar', 'campania_id' => $campania->id, 'paciente_id' => $patient->id,
+    ])
+        ->assertOk()
+        ->assertJsonCount(1, 'servicios')
+        ->assertJsonPath('servicios.0.id', $clinical->id);
+    $this->postJson(route('oferta-flexible.triaje.store'), [
+        'accion' => 'grabar', 'campania_id' => $campania->id, 'paciente_id' => $patient->id,
+        'servicios' => [$clinical->id, $lab->id],
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('servicios');
+    $this->assertDatabaseCount('TB_HOJAS_RUTA', 0);
+});

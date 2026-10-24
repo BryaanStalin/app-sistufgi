@@ -19,14 +19,16 @@ class ServicioUps extends Model
         'DESCRIPCION_UPS',
         'TIPO_UPS',
         'ACTIVO',
+        'HORA_LIMITE',
+        'ENVIA_EESS',
         'created_by',
         'updated_by',
         'deleted_by',
     ];
 
-    protected $casts = ['ACTIVO' => 'boolean', 'ID_UPS' => 'integer'];
+    protected $casts = ['ACTIVO' => 'boolean', 'ID_UPS' => 'integer', 'ENVIA_EESS' => 'boolean'];
 
-    public const TIPOS = ['P' => 'PREVENTIVO', 'E' => 'ESPECIALIDAD'];
+    public const TIPOS = ['P' => 'PREVENTIVO', 'E' => 'ESPECIALIDAD', 'L' => 'Laboratorio (examen)'];
 
     public function getTipoEtiquetaAttribute(): string
     {

@@ -87,6 +87,8 @@ function ofertaFlexibleFixtures(): void
         $table->integer('ID_UPS');
         $table->string('DESCRIPCION_UPS');
         $table->char('TIPO_UPS', 1);
+        $table->time('HORA_LIMITE')->nullable();
+        $table->boolean('ENVIA_EESS')->default(true);
         $table->boolean('ACTIVO')->default(true);
         $table->timestamps();
         foreach (['created_by', 'updated_by', 'deleted_by'] as $column) {
@@ -114,6 +116,8 @@ function ofertaFlexibleFixtures(): void
             $table->dateTime('fecha_fin');
             $table->boolean('asociar_triaje_admision');
             $table->boolean('mismos_servicios');
+            $table->boolean('incluye_laboratorio')->default(false);
+            $table->integer('lab_ultimo_tm')->default(0);
             $table->boolean('cerrada')->default(false);
             $table->dateTime('cerrada_at')->nullable();
             $table->integer('cerrada_by')->nullable();
@@ -129,12 +133,42 @@ function ofertaFlexibleFixtures(): void
         'TB_CAMPANIA_USUARIOS' => function (Blueprint $table): void {
             $table->integer('campania_id');
             $table->integer('usuario_id');
-            $table->char('tipo', 1);
+            $table->string('tipo', 2);
         },
         'TB_CAMPANIA_ENLACES' => function (Blueprint $table): void {
             $table->integer('campania_id');
             $table->integer('medico_usuario_id');
             $table->integer('admision_usuario_id');
+        },
+        'TB_CAMPANIA_ENLACES_LAB' => function (Blueprint $table): void {
+            $table->integer('campania_id');
+            $table->integer('admision_lab_usuario_id');
+            $table->integer('laboratorio_usuario_id');
+        },
+        'TB_LAB_PACIENTES' => function (Blueprint $table): void {
+            $table->integer('campania_id');
+            $table->integer('paciente_id');
+            $table->integer('tm_numero');
+            $table->string('eess_renipress', 10)->nullable();
+            $table->dateTime('eess_asignado_at')->nullable();
+            $table->integer('eess_asignado_by')->nullable();
+        },
+        'TB_LAB_ATENCIONES' => function (Blueprint $table): void {
+            $table->integer('lab_paciente_id');
+            $table->integer('campania_id');
+            $table->dateTime('fecha_atencion');
+            $table->string('fua', 20);
+            $table->integer('ups_id_solicita');
+            $table->integer('hoja_ruta_id')->nullable();
+        },
+        'TB_LAB_ATENCION_EXAMENES' => function (Blueprint $table): void {
+            $table->integer('atencion_id');
+            $table->integer('lab_paciente_id');
+            $table->integer('campania_servicio_id');
+            $table->integer('ups_id');
+            $table->char('estado', 1)->default('P');
+            $table->dateTime('tomado_at')->nullable();
+            $table->integer('tomado_by')->nullable();
         },
         'TB_HOJAS_RUTA' => function (Blueprint $table): void {
             $table->integer('campania_id');
@@ -168,13 +202,17 @@ function ofertaFlexibleFixtures(): void
             ['TB_CAMPANIA_SERVICIOS', 'campania_id, ups_id, fecha_servicio'],
             ['TB_CAMPANIA_USUARIOS', 'campania_id, usuario_id'],
             ['TB_CAMPANIA_ENLACES', 'campania_id, medico_usuario_id'],
+            ['TB_CAMPANIA_ENLACES_LAB', 'campania_id, laboratorio_usuario_id'],
+            ['TB_LAB_PACIENTES', 'campania_id, paciente_id'],
+            ['TB_LAB_PACIENTES', 'campania_id, tm_numero'],
+            ['TB_LAB_ATENCIONES', 'lab_paciente_id, fecha_atencion'],
             ['TB_HOJAS_RUTA', 'campania_id, paciente_id, fecha_atencion'],
             ['TB_HOJA_RUTA_DETALLE', 'hoja_ruta_id, campania_servicio_id'],
         ] as [$name, $columns]
     ) {
         DB::statement(
             'CREATE UNIQUE INDEX UQ_TEST_'.
-                $name.
+                $name.str_replace(', ', '_', $columns).
                 ' ON '.
                 $name.
                 ' ('.
@@ -182,6 +220,17 @@ function ofertaFlexibleFixtures(): void
                 ') WHERE deleted_at IS NULL',
         );
     }
+    DB::statement(
+        'CREATE UNIQUE INDEX UQ_TEST_LAB_EXAMEN ON TB_LAB_ATENCION_EXAMENES '.
+        "(lab_paciente_id, ups_id) WHERE deleted_at IS NULL AND estado <> 'N'",
+    );
+    Schema::create('TB_EESS', function (Blueprint $table): void {
+        $table->increments('ID_EESS');
+        $table->string('RENIPRESS');
+        $table->string('NOM_EESS');
+        $table->boolean('ACTIVO')->default(true);
+    });
+
 }
 
 function ofertaActor(

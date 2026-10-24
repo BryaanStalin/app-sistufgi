@@ -14,9 +14,7 @@ use Illuminate\Http\Request;
 
 class CampaniaUsuarioController extends Controller
 {
-    public function __construct(protected CampaniaUsuarioService $service)
-    {
-    }
+    public function __construct(protected CampaniaUsuarioService $service) {}
 
     public function index(Request $request): View
     {
@@ -31,7 +29,9 @@ class CampaniaUsuarioController extends Controller
             ->get();
         $campania = isset($filters['campania_id'])
             ? Campania::query()
-                ->with(['asignaciones.usuario', 'enlaces.medico', 'enlaces.admision'])
+                ->with([
+                    'asignaciones.usuario', 'enlaces.medico', 'enlaces.admision',
+                ])
                 ->findOrFail($filters['campania_id'])
             : null;
         $medicos = OfertaFlexibleAccess::usuariosConRol('Médico Triaje')
@@ -41,9 +41,14 @@ class CampaniaUsuarioController extends Controller
             ->orderBy('nombre')
             ->get(['id', 'nombre', 'user']);
 
+        $admisionesLab = OfertaFlexibleAccess::usuariosConRol('Admisión Laboratorio')
+            ->orderBy('nombre')->get(['id', 'nombre', 'user']);
+        $laboratorios = OfertaFlexibleAccess::usuariosConRol('Laboratorio')
+            ->orderBy('nombre')->get(['id', 'nombre', 'user']);
+
         return view(
             'oferta_flexible.usuarios.index',
-            compact('campanias', 'campania', 'medicos', 'admisiones'),
+            compact('campanias', 'campania', 'medicos', 'admisiones', 'admisionesLab', 'laboratorios'),
         );
     }
 

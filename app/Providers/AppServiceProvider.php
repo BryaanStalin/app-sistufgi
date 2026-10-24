@@ -27,6 +27,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Password::defaults(fn (): Password => Password::min(8)->mixedCase()->numbers());
 
+        RateLimiter::for('powerbi-api', fn (Request $request): Limit => Limit::perMinute(60)
+            ->by('powerbi-ip:'.$request->ip())
+            ->response(fn (Request $request, array $headers): JsonResponse => response()->json([
+                'message' => 'Demasiadas solicitudes',
+            ], 429, $headers)));
+
         RateLimiter::for('oferta-flexible-dni', function (Request $request): Limit {
             if ($request->input('accion') !== 'buscar' || $request->input('tipo_doc') !== 'DNI') {
                 return Limit::none();

@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateCampaniaRequest;
 use App\Models\Campania;
 use App\Models\ServicioUps;
 use App\Services\CampaniaService;
+use App\Services\LaboratorioStockService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,9 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class CampaniaController extends Controller
 {
-    public function __construct(protected CampaniaService $service)
-    {
-    }
+    public function __construct(protected CampaniaService $service) {}
 
     public function index(Request $request): View
     {
@@ -46,6 +45,9 @@ class CampaniaController extends Controller
             ->addSelect([
                 'servicios_count' => DB::table('TB_CAMPANIA_SERVICIOS')
                     ->selectRaw('COUNT(DISTINCT [ups_id])')
+                    ->whereIn('ups_id', ServicioUps::query()
+                        ->select('id')
+                        ->whereIn('TIPO_UPS', ['P', 'E']))
                     ->whereColumn('campania_id', 'TB_CAMPANIAS.id')
                     ->whereNull('deleted_at'),
             ])
@@ -79,7 +81,12 @@ class CampaniaController extends Controller
         ]);
         $usados = $this->service->usage($campania->servicios->pluck('id')->all());
 
-        return view('oferta_flexible.campanias.show', compact('campania', 'usados'));
+        $stock = app(LaboratorioStockService::class)->tabla($campania);
+        $campania->setRelation('servicios', $campania->servicios->filter(
+            fn ($fila): bool => in_array($fila->servicioUps->TIPO_UPS, ['P', 'E'], true),
+        ));
+
+        return view('oferta_flexible.campanias.show', compact('campania', 'usados', 'stock'));
     }
 
     public function edit(Campania $campania): View
@@ -121,13 +128,36 @@ class CampaniaController extends Controller
 
     private function form(Campania $campania): View
     {
-        $campania->load('servicios');
+        $campania->load('servicios.servicioUps');
         $servicios = ServicioUps::query()
             ->where(function ($query) use ($campania): void {
                 $query->where('ACTIVO', 1)->orWhereIn('id', $campania->servicios->pluck('ups_id'));
             })
             ->orderBy('DESCRIPCION_UPS')
             ->get();
+        $examenes = $servicios->where('TIPO_UPS', 'L');
+        $servicios = $servicios->whereIn('TIPO_UPS', ['P', 'E']);
+        $filasLab = $campania->servicios->filter(fn ($fila): bool => $fila->servicioUps->TIPO_UPS === 'L');
+        $labDiarios = $filasLab->map(fn ($fila): array => [
+            'fecha' => $fila->fecha_servicio->toDateString(),
+            'ups_id' => $fila->ups_id,
+            'cupos' => $fila->cupos,
+        ])
+            ->values()
+            ->all();
+        $labGenerales = $filasLab->unique('ups_id')->map(fn ($fila): array => [
+            'ups_id' => $fila->ups_id, 'cupos' => $fila->cupo_base ?? $fila->cupos,
+        ])
+            ->values()
+            ->all();
+        $labPersonalizados = $filasLab->where('cupo_personalizado', true)->map(
+            fn ($fila): string => $fila->fecha_servicio->toDateString().':'.$fila->ups_id,
+        )
+            ->values()
+            ->all();
+        $campania->setRelation('servicios', $campania->servicios->filter(
+            fn ($fila): bool => in_array($fila->servicioUps->TIPO_UPS, ['P', 'E'], true),
+        ));
         $diarios = $campania->servicios
             ->map(
                 fn ($fila): array => [
@@ -136,6 +166,7 @@ class CampaniaController extends Controller
                     'cupos' => $fila->cupos,
                 ],
             )
+            ->values()
             ->all();
         $generales = $campania->servicios
             ->unique('ups_id')
@@ -152,7 +183,10 @@ class CampaniaController extends Controller
 
         return view(
             'oferta_flexible.campanias.'.($campania->exists ? 'edit' : 'create'),
-            compact('campania', 'servicios', 'diarios', 'generales', 'personalizados'),
+            compact(
+                'campania', 'servicios', 'diarios', 'generales', 'personalizados',
+                'examenes', 'labDiarios', 'labGenerales', 'labPersonalizados',
+            ),
         );
     }
 }

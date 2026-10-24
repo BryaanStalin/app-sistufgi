@@ -120,7 +120,10 @@
                             data-bs-target="#enlazar-panel"
                             aria-controls="enlazar-panel"
                             aria-selected="false"
-                            @disabled(!$puedeEnlazar && $campania->enlaces->isEmpty())
+                            @disabled(
+                                !$puedeEnlazar
+                                && $campania->enlaces->isEmpty()
+                            )
                         >
                             <span class="oferta-step-number">2</span>
                             <i class="bi bi-link-45deg me-1" aria-hidden="true"></i>

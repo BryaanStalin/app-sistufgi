@@ -13,15 +13,13 @@ use Illuminate\Http\Request;
 
 class ServicioUpsController extends Controller
 {
-    public function __construct(protected ServicioUpsService $service)
-    {
-    }
+    public function __construct(protected ServicioUpsService $service) {}
 
     public function index(Request $request): View
     {
         $filters = $request->validate([
             'q' => 'nullable|string|max:255',
-            'tipo' => 'nullable|in:P,E',
+            'tipo' => 'nullable|in:P,E,L',
             'activo' => 'nullable|in:0,1',
         ]);
         $query = ServicioUps::query()
@@ -35,6 +33,9 @@ class ServicioUpsController extends Controller
                 }),
             )
             ->when($filters['tipo'] ?? null, fn ($query, $tipo) => $query->where('TIPO_UPS', $tipo));
+        if (empty($filters['tipo'])) {
+            $query->whereIn('TIPO_UPS', ['P', 'E']);
+        }
         $conteos = (clone $query)
             ->toBase()
             ->selectRaw('COUNT(*) AS [todos]')

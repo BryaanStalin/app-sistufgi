@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CampaniaUsuario extends OfertaFlexibleModel
 {
+    public const ROLES = [
+        'M' => 'Médico Triaje',
+        'A' => 'Admisión',
+        'AL' => 'Admisión Laboratorio',
+        'L' => 'Laboratorio',
+    ];
+
     protected $table = 'TB_CAMPANIA_USUARIOS';
 
     protected $fillable = ['campania_id', 'usuario_id', 'tipo', 'created_by', 'updated_by', 'deleted_by'];

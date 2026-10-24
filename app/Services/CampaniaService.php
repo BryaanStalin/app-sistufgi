@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Campania;
 use App\Models\CampaniaServicio;
 use App\Models\HojaRutaDetalle;
+use App\Models\LabAtencionExamen;
 use App\Models\ServicioUps;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class CampaniaService
 {
+    public function __construct(protected LaboratorioStockService $stock) {}
+
     /** @param array<string, mixed> $data */
     public function save(?Campania $campania, array $data, int $actorId): Campania
     {
@@ -25,12 +28,23 @@ class CampaniaService
             $campania->assertEditable();
             $anteriores = $campania->exists ? $campania
                 ->servicios()
+                ->with('servicioUps')
                 ->lockForUpdate()
                 ->get() : collect();
             $tieneHojas = $campania->exists && $campania
                 ->hojas()
                 ->withTrashed()
                 ->exists();
+            $incluyeLab = (bool) ($data['incluye_laboratorio'] ?? $campania->incluye_laboratorio ?? false);
+            $tieneLab = $campania->exists && $campania->labPacientes()
+                ->withTrashed()
+                ->exists();
+            if ($tieneLab && ! $incluyeLab) {
+                $this->fail('No se puede deshabilitar el laboratorio con registros existentes.');
+            }
+            if ($tieneLab && $campania->mismos_servicios !== (bool) $data['mismos_servicios']) {
+                $this->fail('No se puede cambiar la modalidad con registros de laboratorio.');
+            }
             if ($tieneHojas && $campania->mismos_servicios !== (bool) $data['mismos_servicios']) {
                 $this->fail('No se puede cambiar la modalidad de servicios cuando hay hojas registradas.');
             }
@@ -58,7 +72,37 @@ class CampaniaService
             ) {
                 $this->fail('Quite los enlaces antes de desactivar la asociación de Triaje y Admisión.');
             }
-            $filas = $this->prepareRows($data, $inicio, $fin, $anteriores);
+            if ($campania->exists && ! $incluyeLab && (
+                $campania->asignaciones()
+                    ->whereIn('tipo', ['AL', 'L'])
+                    ->exists()
+            )) {
+                $this->fail('Quite las asignaciones de laboratorio antes de deshabilitarlo.');
+            }
+            if ($tieneLab && $campania->labAtenciones()
+                ->withTrashed()
+                ->where(
+                    fn ($query) => $query->where('fecha_atencion', '<', $inicio)->orWhere('fecha_atencion', '>', $fin),
+                )->exists()) {
+                $this->fail('El rango no puede excluir días con registros de laboratorio.');
+            }
+            $triaje = $anteriores->filter(fn ($fila): bool => $fila->servicioUps->TIPO_UPS !== 'L');
+            $laboratorio = $anteriores->filter(fn ($fila): bool => $fila->servicioUps->TIPO_UPS === 'L');
+            $filas = $this->prepareRows($data, $inicio, $fin, $triaje);
+            $this->assertTipos($filas, ['P', 'E']);
+            $filasLab = [];
+            if ($incluyeLab) {
+                $datosLab = [
+                    'mismos_servicios' => $data['mismos_servicios'],
+                    'servicios_generales' => $data['laboratorio_generales'] ?? [],
+                    'servicios_dia' => $data['laboratorio_dia'] ?? [],
+                    'sobrescribir_personalizados' => $data['laboratorio_sobrescribir_personalizados'] ?? false,
+                ];
+                $filasLab = $this->prepareRows($datosLab, $inicio, $fin, $laboratorio);
+                $this->assertTipos($filasLab, ['L']);
+            }
+            $this->assertLaboratorioEditable($campania, $laboratorio, $filasLab);
+            $filas += $filasLab;
             $historicos = $anteriores->keyBy(
                 fn (CampaniaServicio $fila): string => $this->key(
                     $fila->fecha_servicio->toDateString(),
@@ -97,6 +141,7 @@ class CampaniaService
                     ->only(['nombre', 'asociar_triaje_admision', 'mismos_servicios'])
                     ->all(),
             );
+            $campania->incluye_laboratorio = $incluyeLab;
             $campania->fecha_inicio = $inicio;
             $campania->fecha_fin = $fin;
             $campania->created_by ??= $actorId;
@@ -219,6 +264,9 @@ class CampaniaService
     {
         return DB::table('TB_HOJA_RUTA_DETALLE as d')
             ->join('TB_HOJAS_RUTA as h', 'h.id', '=', 'd.hoja_ruta_id')
+            ->join('TB_CAMPANIA_SERVICIOS as s', 's.id', '=', 'd.campania_servicio_id')
+            ->join('TB_UPSS_CAMPAÑAS as u', 'u.id', '=', 's.ups_id')
+            ->whereIn('u.TIPO_UPS', ['P', 'E'])
             ->whereIn('d.campania_servicio_id', $servicioIds)
             ->whereNull('d.deleted_at')
             ->whereNull('h.deleted_at')
@@ -262,6 +310,11 @@ class CampaniaService
             ) {
                 $this->fail('No se puede eliminar una campaña con hojas de ruta registradas.');
             }
+            if ($campania->labPacientes()
+                ->withTrashed()
+                ->exists()) {
+                $this->fail('No se puede eliminar una campaña con registros de laboratorio.');
+            }
             foreach (['servicios', 'enlaces', 'asignaciones'] as $relacion) {
                 foreach ($campania->$relacion()->get() as $registro) {
                     $registro->deleted_by = $actorId;
@@ -271,6 +324,53 @@ class CampaniaService
             $campania->deleted_by = $actorId;
             $campania->delete();
         });
+    }
+
+    /** @param array<string, array<string, mixed>> $filas
+     * @param  list<string>  $tipos
+     */
+    private function assertTipos(array $filas, array $tipos): void
+    {
+        $ids = array_unique(array_column($filas, 'ups_id'));
+        $validos = ServicioUps::query()
+            ->whereIn('id', $ids)
+            ->whereIn('TIPO_UPS', $tipos)
+            ->lockForUpdate()
+            ->pluck('id')
+            ->all();
+        if (count($ids) !== count($validos)) {
+            $this->fail('Separe los servicios de triaje de los exámenes de laboratorio.');
+        }
+    }
+
+    /** @param Collection<int, CampaniaServicio> $anteriores
+     * @param  array<string, array<string, mixed>>  $filas
+     */
+    private function assertLaboratorioEditable(Campania $campania, Collection $anteriores, array $filas): void
+    {
+        $stock = $campania->exists ? collect($this->stock->tabla($campania))->keyBy('campania_servicio_id') : collect();
+        $historial = LabAtencionExamen::withTrashed()
+            ->whereIn('campania_servicio_id', $anteriores->pluck('id'))
+            ->pluck('campania_servicio_id')
+            ->all();
+        $cambio = count($anteriores) !== count($filas);
+        foreach ($anteriores as $anterior) {
+            $key = $this->key($anterior->fecha_servicio->toDateString(), $anterior->ups_id);
+            $nueva = $filas[$key] ?? null;
+            if ($nueva === null && in_array($anterior->id, $historial, true)) {
+                $this->fail('No se puede retirar un examen o día con registros de laboratorio.');
+            }
+            if ($nueva && $nueva['cupos'] < ($stock->get($anterior->id)['registrados'] ?? 0)) {
+                $this->fail('Los insumos no pueden ser menores que la cantidad ya consumida ese día.');
+            }
+            $cambio = $cambio || $nueva === null ||
+                $nueva['cupos'] !== $anterior->cupos ||
+                $nueva['cupo_base'] !== $anterior->cupo_base ||
+                $nueva['cupo_personalizado'] !== $anterior->cupo_personalizado;
+        }
+        if ($cambio && $campania->exists && $campania->estado !== 'Activa') {
+            $this->fail('Los exámenes e insumos solo pueden actualizarse mientras la campaña esté Activa.');
+        }
     }
 
     private function key(string $fecha, int $upsId): string

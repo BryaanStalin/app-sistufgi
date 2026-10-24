@@ -90,7 +90,7 @@ test('administrator creates a service with Spanish text and audit', function ():
         ->assertSee('niña');
 });
 
-test('service rejects any type outside P and E', function (string $type): void {
+test('service rejects any type outside P E and L', function (string $type): void {
     $actor = ofertaActor();
 
     $this
@@ -161,5 +161,7 @@ test('service with route sheets cannot be deactivated through either endpoint', 
                 'ACTIVO' => 0,
             ]);
     $response->assertUnprocessable();
-    expect($service->refresh()->ACTIVO)->toBeTrue();
+    expect($service->refresh()
+        ->ACTIVO)
+        ->toBeTrue();
 })->with(['delete', 'update']);

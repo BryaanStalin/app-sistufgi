@@ -25,6 +25,28 @@ class PacienteService
         return $paciente ? $this->datos($paciente) : null;
     }
 
+    /** @return array<string, int|string|null>|null */
+    public function buscarDocumentoLocal(string $tipo, string $numero): ?array
+    {
+        $paciente = $this->pacienteLocal($tipo, $numero);
+
+        return $paciente ? $this->datos($paciente) : null;
+    }
+
+    protected function generarCodigoSinDocumento(): string
+    {
+        return 'SD-'.substr(strtoupper(bin2hex(random_bytes(12))), 0, 12);
+    }
+
+    private function codigoSinDocumento(): string
+    {
+        do {
+            $codigo = $this->generarCodigoSinDocumento();
+        } while ($this->pacienteLocal('S/ DOCUMENTO', $codigo, true) !== null);
+
+        return $codigo;
+    }
+
     public function prepararBusqueda(string $tipo, ?string $numero): ?ResultadoConsultaDni
     {
         if ($tipo !== 'DNI' || $this->pacienteLocal($tipo, $numero) || ! config('services.dni_api.enabled')) {
@@ -85,7 +107,7 @@ class PacienteService
                         return $this->datos($existente);
                     }
                 }
-                $numero = $sinDocumento ? 'SD-'.strtoupper(bin2hex(random_bytes(12))) : $data['dni'];
+                $numero = $sinDocumento ? $this->codigoSinDocumento() : $data['dni'];
                 $paciente = PacienteMock::create([
                     'tipo_doc' => $data['tipo_doc'],
                     'dni' => $numero,

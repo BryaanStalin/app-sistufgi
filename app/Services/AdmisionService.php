@@ -21,7 +21,10 @@ use Throwable;
 
 class AdmisionService
 {
-    public function __construct(protected HojaRutaPdfService $pdf) {}
+    public function __construct(
+        protected HojaRutaPdfService $pdf,
+        protected LaboratorioRegistroService $laboratorio,
+    ) {}
 
     /** @return Collection<int, Campania> */
     public function campanias(User $usuario): Collection
@@ -72,13 +75,17 @@ class AdmisionService
         $servicios = DB::table('TB_HOJA_RUTA_DETALLE as detalle')
             ->join('TB_CAMPANIA_SERVICIOS as servicio', 'servicio.id', '=', 'detalle.campania_servicio_id')
             ->join('TB_UPSS_CAMPAÑAS as ups', 'ups.id', '=', 'servicio.ups_id')
+            ->whereIn('ups.TIPO_UPS', ['P', 'E'])
             ->whereIn('detalle.hoja_ruta_id', $hojas->getCollection()->pluck('id'))
             ->whereNull('detalle.deleted_at')
             ->orderBy('detalle.id')
             ->get(['detalle.hoja_ruta_id', 'ups.DESCRIPCION_UPS'])
             ->groupBy('hoja_ruta_id');
 
-        return $hojas->through(function (object $hoja) use ($servicios): object {
+        $bloqueadas = $this->laboratorio->hojasBloqueadas($hojas->getCollection()->pluck('id')->all());
+
+        return $hojas->through(function (object $hoja) use ($servicios, $bloqueadas): object {
+            $hoja->laboratorio = in_array((int) $hoja->id, $bloqueadas, true);
             $hoja->nombre_completo = (new PacienteMock([
                 'nombres' => $hoja->nombres,
                 'apellidos' => $hoja->apellidos,
@@ -247,6 +254,7 @@ class AdmisionService
                 ->lockForUpdate()
                 ->findOrFail($hojaId);
             $campania->assertEditable();
+            $this->laboratorio->assertHojaEliminable($hoja);
             $detalles = $hoja
                 ->detalles()
                 ->orderBy('id')
